@@ -1,2 +1,19 @@
-# Regular_expression_VM
-# 🧠 Virtual Regular Expression Machine  A Python-based project for Automata Theory that converts Regular Expressions into NFA and DFA, and simulates string acceptance using an interactive GUI.  ---  ## 🚀 Features  - 🔤 Input any Regular Expression - 🔄 Convert Regex → NFA (Non-deterministic Finite Automaton) - 🔁 Convert NFA → DFA (Deterministic Finite Automaton) - 🧪 Test input strings for acceptance/rejection - 📊 Step-by-step transition display - 🖥️ Simple and clean GUI  ---  ## 🛠️ Tech Stack  - Python - Tkinter (GUI) - Automata Logic (Regex → NFA → DFA)  ---  ## 📂 Project Structure
+# 🧠 Virtual Regular Expression Machine
+
+A Python-based project for Automata Theory that converts Regular Expressions into NFA and DFA, and simulates string acceptance using an interactive GUI.
+
+## 🚀 Features
+
+- 🔤 Input any Regular Expression
+- 🔄 Convert Regex → NFA (Non-deterministic Finite Automaton)
+- 🔁 Convert NFA → DFA (Deterministic Finite Automaton)
+- 🧪 Test input strings for acceptance/rejection
+- 📊 Step-by-step transition display
+- 🖥️ Simple and clean GUI
+
+## 🛠️ Tech Stack
+
+- Python
+- Tkinter (GUI)
+- Automata Logic (Regex → NFA → DFA)
+
