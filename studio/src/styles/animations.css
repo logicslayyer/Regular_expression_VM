@@ -1,0 +1,123 @@
+/* ============================================================
+   AUTOMATA THEORY STUDIO — All Keyframe Animations
+   ============================================================ */
+
+/* ── State Node: Pulse Ring (active state) ── */
+@keyframes pulseRing {
+  0%   { box-shadow: 0 0 0 0 rgba(34,211,165,0.6), 0 0 24px rgba(34,211,165,0.4); }
+  50%  { box-shadow: 0 0 0 10px rgba(34,211,165,0), 0 0 24px rgba(34,211,165,0.4); }
+  100% { box-shadow: 0 0 0 0 rgba(34,211,165,0), 0 0 24px rgba(34,211,165,0.4); }
+}
+
+/* ── State Node: Activation pop-in ── */
+@keyframes nodeActivate {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.22); }
+  70%  { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+/* ── State Node: Rejection shake ── */
+@keyframes shake {
+  0%   { transform: translateX(0); }
+  15%  { transform: translateX(-6px); }
+  30%  { transform: translateX(6px); }
+  45%  { transform: translateX(-5px); }
+  60%  { transform: translateX(5px); }
+  75%  { transform: translateX(-3px); }
+  90%  { transform: translateX(3px); }
+  100% { transform: translateX(0); }
+}
+
+/* ── Trace Log Entry: slide in from right ── */
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ── PDA Stack: slide in from top ── */
+@keyframes slideInStack {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── CYK Cell: pulse when filled ── */
+@keyframes cellPulse {
+  0%   { transform: scale(1); background: rgba(139,92,246,0.4); }
+  60%  { transform: scale(1.05); }
+  100% { transform: scale(1); background: rgba(139,92,246,0.2); }
+}
+
+/* ── Edge: traveling dot (via stroke-dashoffset) ── */
+@keyframes edgeTravelDot {
+  0%   { stroke-dashoffset: 100; opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 0; }
+}
+
+/* ── Accept: screen flash green ── */
+@keyframes acceptFlash {
+  0%   { box-shadow: inset 0 0 0 0 rgba(34,211,165,0); }
+  20%  { box-shadow: inset 0 0 80px 20px rgba(34,211,165,0.25); }
+  100% { box-shadow: inset 0 0 0 0 rgba(34,211,165,0); }
+}
+
+/* ── Reject: screen border flash red ── */
+@keyframes rejectFlash {
+  0%   { box-shadow: inset 0 0 0 0 rgba(248,113,113,0); }
+  20%  { box-shadow: inset 0 0 60px 20px rgba(248,113,113,0.2); }
+  100% { box-shadow: inset 0 0 0 0 rgba(248,113,113,0); }
+}
+
+/* ── Tape cell write highlight ── */
+@keyframes tapeWrite {
+  0%   { background: rgba(139,92,246,0.6); }
+  100% { background: rgba(0,245,212,0.15); }
+}
+
+/* ── Spinner ── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Gentle float ── */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-6px); }
+}
+
+/* ── Gradient drift ── */
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ── Fade + slide up (panels) ── */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Blink cursor ── */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* ── Utility classes for animations ── */
+.animate-pulse-ring     { animation: pulseRing 1.5s ease-out infinite; }
+.animate-node-activate  { animation: nodeActivate 0.4s ease-out; }
+.animate-shake          { animation: shake 0.5s ease-out; }
+.animate-slide-right    { animation: slideInRight 0.2s ease-out; }
+.animate-fade-up        { animation: fadeSlideUp 0.3s ease-out; }
+.animate-spin           { animation: spin 0.8s linear infinite; }
+.animate-float          { animation: float 3s ease-in-out infinite; }
+.animate-accept-flash   { animation: acceptFlash 1.2s ease-out; }
+.animate-reject-flash   { animation: rejectFlash 0.8s ease-out; }
+
+/* ── Edge active animation ── */
+.edge-active {
+  stroke: var(--accent-cyan) !important;
+  stroke-dasharray: 8 4;
+  animation: edgeTravelDot 0.6s linear forwards;
+}
