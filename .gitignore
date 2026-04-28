@@ -6,7 +6,6 @@ __pycache__/
 .Python
 *.egg
 *.egg-info/
-dist/
 build/
 .eggs/
 
@@ -25,3 +24,20 @@ env/
 # OS
 .DS_Store
 Thumbs.db
+
+# Node / React
+node_modules/
+studio/node_modules/
+dist/
+studio/dist/
+*.local
+.DS_Store
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# TypeScript build cache
+*.tsbuildinfo

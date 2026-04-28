@@ -13,57 +13,97 @@ interface StateNodeData {
 export const CustomStateNode = memo(({ data }: NodeProps) => {
   const d = data as StateNodeData;
 
-  let nodeClass = 'state-node';
-  if (d.isActive) nodeClass += ' active';
-  else if (d.isRejected) nodeClass += ' rejected';
-  else if (d.isNFAActive) nodeClass += ' nfa-active';
+  const isActive = d.isActive;
+  const isAccepting = d.isAccepting;
+  const isRejected = d.isRejected;
+
+  let borderColor = 'rgba(0, 245, 212, 0.3)';
+  let bgColor = 'var(--bg-elevated)';
+  let textColor = 'rgba(0, 245, 212, 0.9)';
+  let shadow = 'none';
+
+  if (isActive) {
+    borderColor = 'var(--accent-cyan)';
+    bgColor = 'rgba(0, 245, 212, 0.12)';
+    textColor = 'var(--accent-cyan)';
+    shadow = '0 0 24px rgba(0,245,212,0.4), inset 0 0 12px rgba(0,245,212,0.08)';
+  } else if (isRejected) {
+    borderColor = 'var(--accent-red)';
+    bgColor = 'rgba(248,113,113,0.12)';
+    textColor = 'var(--accent-red)';
+    shadow = '0 0 24px rgba(248,113,113,0.4)';
+  } else if (isAccepting) {
+    borderColor = 'var(--accent-cyan)';
+    bgColor = 'rgba(0, 245, 212, 0.06)';
+    textColor = 'var(--accent-cyan)';
+  }
 
   return (
     <div
-      className={nodeClass}
       style={{
         position: 'relative',
-        ...(d.isAccepting ? { outline: '2px solid var(--accent-cyan)', outlineOffset: '5px' } : {}),
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '56px',
+        height: '56px',
+        borderRadius: '50%',
+        border: `2px solid ${borderColor}`,
+        background: bgColor,
+        boxShadow: shadow,
+        transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)',
+        cursor: 'pointer',
       }}
     >
-      {/* Start arrow */}
       {d.isStart && (
         <div style={{
           position: 'absolute',
-          left: '-28px', top: '50%',
+          left: '-30px', top: '50%',
           transform: 'translateY(-50%)',
-          display: 'flex', alignItems: 'center', gap: '2px',
+          display: 'flex', alignItems: 'center',
         }}>
-          <div style={{
-            width: '18px', height: '2px',
-            background: 'var(--accent-cyan)',
-          }} />
+          <div style={{ width: '20px', height: '2px', background: 'var(--accent-cyan)' }} />
           <div style={{
             width: 0, height: 0,
-            borderTop: '5px solid transparent',
-            borderBottom: '5px solid transparent',
-            borderLeft: '8px solid var(--accent-cyan)',
+            borderTop: '6px solid transparent',
+            borderBottom: '6px solid transparent',
+            borderLeft: '9px solid var(--accent-cyan)',
           }} />
         </div>
       )}
 
-      {/* Accepting outer ring */}
-      {d.isAccepting && (
+      {isAccepting && (
         <div style={{
-          position: 'absolute',
-          inset: '-8px',
-          borderRadius: '50%',
-          border: '2px solid rgba(0,245,212,0.5)',
-          pointerEvents: 'none',
+          position: 'absolute', inset: '-7px', borderRadius: '50%',
+          border: `2px solid ${isActive ? 'var(--accent-cyan)' : 'rgba(0,245,212,0.4)'}`,
+          pointerEvents: 'none', transition: 'all 0.3s',
         }} />
       )}
 
-      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600, userSelect: 'none' }}>
+      {isActive && (
+        <div style={{
+          position: 'absolute', inset: '-12px', borderRadius: '50%',
+          border: '1px solid rgba(0,245,212,0.2)',
+          pointerEvents: 'none', animation: 'pulseRing 1.5s ease-out infinite',
+        }} />
+      )}
+
+      <span style={{
+        fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 700,
+        userSelect: 'none', color: textColor, letterSpacing: '0.02em',
+      }}>
         {String(d.label)}
       </span>
 
-      <Handle type="target" position={Position.Left} style={{ opacity: 0 }} />
-      <Handle type="source" position={Position.Right} style={{ opacity: 0 }} />
+      {/* Handles on all 4 sides for flexible edge routing */}
+      <Handle type="target" position={Position.Left} id="target-left" style={{ opacity: 0 }} />
+      <Handle type="source" position={Position.Right} id="source-right" style={{ opacity: 0 }} />
+      <Handle type="target" position={Position.Top} id="target-top" style={{ opacity: 0 }} />
+      <Handle type="source" position={Position.Top} id="source-top" style={{ opacity: 0 }} />
+      <Handle type="target" position={Position.Bottom} id="target-bottom" style={{ opacity: 0 }} />
+      <Handle type="source" position={Position.Bottom} id="source-bottom" style={{ opacity: 0 }} />
+      <Handle type="target" position={Position.Right} id="target-right" style={{ opacity: 0 }} />
+      <Handle type="source" position={Position.Left} id="source-left" style={{ opacity: 0 }} />
     </div>
   );
 });

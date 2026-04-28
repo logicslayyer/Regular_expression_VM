@@ -1,0 +1,744 @@
+Automata Theory Reference Guide
+Page 1
+Automata Theory
+Complete Reference Guide
+DFA · NFA · Conversions · Regular Expressions · Turing Machines
+Formal Language Theory & Computation
+Automata theory is the foundation of computer science and formal language theory. It studies
+abstract machines (automata) and the computational problems they can solve. This guide covers
+all major automaton types — from the simple DFA to the powerful Turing Machine — with formal
+definitions, transition rules, worked examples, and conversion algorithms.
+#
+Topic
+Covers
+1
+Deterministic Finite Automaton (DFA)
+Definition, rules, graphs, simulation
+2
+Nondeterministic FA (NFA)
+ε-transitions, power set, diagrams
+3
+NFA → DFA Conversion
+Subset construction algorithm
+4
+Regular Expressions → DFA
+Thompson's / McNaughton-Yamada
+5
+Pushdown Automata (PDA)
+Stack operations, CFLs
+6
+Turing Machines
+Tape, transitions, decidability
+7
+Comparison & Hierarchy
+All models side by side
+
+
+Automata Theory Reference Guide
+Page 2
+1  Deterministic Finite Automaton (DFA)
+Every state has exactly one transition per input symbol
+Formal Definition
+A DFA is a 5-tuple M = (Q, Σ, δ, q0, F) where:
+Symbol
+Name
+Description
+Q
+States
+Finite, non-empty set of states
+Σ
+Alphabet
+Finite set of input symbols
+δ: Q × Σ → Q
+Transition fn
+Total function — one next state for every (state, symbol)
+q0 ∈ Q
+Start state
+The unique initial state
+F ⊆ Q
+Accept states
+Set of final / accepting states
+DFA Rules (must memorise)
+ Exactly ONE transition for every (state, symbol) pair — no missing, no ambiguous
+ No ε-transitions (cannot move without reading a symbol)
+ δ is a total function — defined for all states and all symbols
+ Accept if and only if the machine ends in a state q ∈ F after reading the entire input
+ Reject if the machine ends in a state q ∉ F (no crashes — always defined)
+ Closed under: union, intersection, complement, concatenation, Kleene star
+DFA Graph — strings over {0,1} ending in "010"
+States: q0 (start), q1, q2, q3* (accept). Transitions follow the suffix being built.
+q0
+q1
+q2
+q3*
+0
+1
+0
+1
+0
+1
+(reject loop on 0)
+DFA accepting strings over {0,1} ending in "010"
+State
+Role
+On input 0
+On input 1
+→ q0
+Start
+q1
+q0
+q1
+Seen one '0'
+q1
+q2
+q2
+Seen '01'
+q3
+q0
+
+
+Automata Theory Reference Guide
+Page 3
+q3 *
+Accept (saw '010')
+q1
+q2
+DFA Design Technique: Track what suffix the machine has seen
+For a DFA accepting strings ending in pattern P, create states corresponding to how many characters of P
+have been matched so far. This is called the suffix automaton construction. The Knuth-Morris-Pratt
+failure function tells you which earlier state to fall back to on a mismatch.
+DFA Minimization (Myhill-Nerode Theorem)
+Two states p, q are equivalent if for all strings w: δ*(p,w) ∈ F ↔ δ*(q,w) ∈ F. The minimization algorithm
+(table-filling / Hopcroft) merges equivalent states, producing the unique minimum-state DFA for the
+language.
+Step
+Action
+1
+Mark all (accept, non-accept) pairs as distinguishable
+2
+For each unmarked pair (p,q) and each symbol a: if (δ(p,a), δ(q,a)) is marked → mark (p,q)
+3
+Repeat step 2 until no new pairs are marked
+4
+Merge all unmarked (equivalent) pairs into single states
+
+
+Automata Theory Reference Guide
+Page 4
+2  Nondeterministic Finite Automaton (NFA)
+Multiple transitions allowed per symbol; ε-transitions permitted
+Formal Definition
+An NFA is a 5-tuple N = (Q, Σ, δ, q0, F) where δ: Q × (Σ ∪ {ε}) → P(Q) maps to a power set of states.
+NFA Rules
+ δ returns a SET of states (possibly empty ∅) — not a single state
+ ε-transitions: machine can change state without reading any symbol
+ At each step, machine 'branches' into all possible next states simultaneously
+ Input accepted if AT LEAST ONE branch of computation ends in an accept state
+ Input rejected only when ALL branches fail or die (reach ∅)
+ ε-closure(q) = all states reachable from q via ε-transitions alone (including q itself)
+NFA Graph — strings containing "ab"
+p0
+p1
+p2
+p3*
+a
+b
+ε
+a,b
+a,b
+b (nondeterministic branch)
+NFA accepting strings containing "ab" (with ε-transition)
+State
+On a
+On b
+On ε
+→ p0
+{p0, p1}
+{p0}
+∅
+p1
+∅
+{p2}
+∅
+p2 (→ε p3)
+∅
+∅
+{p3}
+p3 *
+{p3}
+{p3}
+∅
+ε-closure Algorithm
+Step
+Procedure
+Init
+closure = {q}  (every state is in its own ε-closure)
+Expand
+For each state s in closure: add all states reachable via single ε-transition from s
+Repeat
+Continue until no new states can be added (fixed point)
+Use
+Always compute ε-closure after reading each input symbol
+
+
+Automata Theory Reference Guide
+Page 5
+3  NFA → DFA Conversion (Subset Construction)
+Every NFA can be converted to an equivalent DFA — same language, different structure
+Key Insight
+An NFA with n states can be simulated by a DFA whose states are subsets of NFA states. In the worst
+case the DFA has 2n states, but in practice far fewer are reachable.
+Subset Construction Algorithm
+ Step 1 — Start: DFA start state = ε-closure({q0})
+ Step 2 — For each DFA state S (a set of NFA states) and each input symbol a:
+ MOVE(S, a) = ∪{ δ(q, a) | q ∈ S }
+ New DFA state = ε-closure(MOVE(S, a))
+ Step 3 — Add the new state to the DFA table if not already present
+ Step 4 — Mark a DFA state as accept if it contains any NFA accept state
+ Step 5 — Repeat until no new DFA states are created
+ Step 6 — Dead state ∅ (empty set): add a non-accepting sink state if MOVE returns ∅
+Worked Example
+NFA over {a, b}: accepts strings ending in 'ab'. States: {q0, q1, q2*}. Transitions: q0→q0 on a,b; q0→q1 on
+a; q1→q2 on b.
+DFA State (NFA subset)
+ε-closure
+On a
+On b
+Accept?
+→ {q0}
+{q0}
+{q0,q1}
+{q0}
+No
+{q0,q1}
+{q0,q1}
+{q0,q1}
+{q0,q2}
+No
+{q0,q2} *
+{q0,q2}
+{q0,q1}
+{q0}
+YES (q2∈F)
+∅ (dead)
+—
+∅
+∅
+No
+Complexity & Minimization
+Property
+Detail
+State explosion
+NFA with n states → DFA with up to 2^n states (exponential worst case)
+Typical case
+Most practical conversions produce far fewer reachable DFA states
+After conversion
+Run DFA minimization (table-filling) to get the canonical minimum DFA
+Language preserved
+L(NFA) = L(DFA) — subset construction is correctness-preserving
+
+
+Automata Theory Reference Guide
+Page 6
+4  Regular Expressions → Automata
+Thompson's construction: regex → NFA → (subset construction) → DFA
+Regular Expression Equivalence Theorem
+Every regular expression R describes exactly the same class of languages as DFAs and NFAs. The three
+models — RE, NFA, DFA — are all equivalent in expressive power (Kleene's Theorem).
+Regular Expression Operators & Rules
+ ε — matches the empty string only
+ a — matches the single symbol a (for a ∈ Σ)
+ R|S — union: matches any string matched by R OR S
+ RS — concatenation: matches strings formed by a match for R followed by a match for S
+ R* — Kleene star: matches zero or more repetitions of strings matching R
+ R+ — one or more: equivalent to RR*
+ R? — optional: equivalent to R|ε
+ Precedence (high→low): * > concatenation > |
+ Parentheses override precedence: (a|b)* means zero or more a's or b's
+Thompson's Construction (Regex → NFA)
+Each regex operator maps to a small NFA fragment. Combine fragments bottom-up.
+Regex
+NFA fragment
+States added
+ε
+→(i)—ε→(f)*
+2
+a
+→(i)—a→(f)*
+2
+R|S
+New start with ε to start(R) and start(S); end(R) and end(S) ε to new accept
+2
+RS
+end(R) merged with start(S) (or ε-transition)
+0 extra
+R*
+New start→ε→start(R)→…→end(R)→ε→new accept; new start→ε→new accept
+2
+Example: regex (a|b)*ab → NFA → DFA
+Stage
+Result
+Regex
+(a|b)*ab
+Thompson NFA
+~10 states with ε-transitions for (a|b)* fragment
+ε-closure of start
+{q0, q1, q2, q3} (ε-reachable)
+After subset construction
+3 reachable DFA states (same as NFA→DFA section example)
+
+
+Automata Theory Reference Guide
+Page 7
+After minimisation
+Minimum DFA with 3 states
+Direct DFA Construction (McNaughton-Yamada-Glushkov)
+Alternatively, compute firstpos, lastpos, and followpos sets directly from the syntax tree of the augmented
+regex (r)#, and build the DFA without explicitly constructing an NFA. This is the method used in many lexer
+generators (e.g., flex).
+
+
+Automata Theory Reference Guide
+Page 8
+5  Pushdown Automata (PDA)
+NFA augmented with an infinite stack — recognises Context-Free Languages
+Formal Definition
+A PDA is a 7-tuple P = (Q, Σ, Γ, δ, q0, Z0, F)
+Symbol
+Name
+Description
+Q
+States
+Finite set of states
+Σ
+Input alphabet
+Finite set of input symbols
+Γ
+Stack alphabet
+Finite set of stack symbols
+δ: Q×(Σ∪{ε})×Γ → P(Q×Γ*)
+Transition fn
+Given state, input, top-of-stack → (new state, stack replacement)
+q0
+Start state
+Initial state
+Z0 ∈ Γ
+Initial stack symbol
+Bottom-of-stack marker
+F ⊆ Q
+Accept states
+Accepting by final state (or by empty stack)
+PDA Transition Notation & Rules
+ Transition written as: (p, a, A) → (q, γ) meaning:
+ In state p, read input a (or ε), pop A from stack, push γ, go to state q
+ γ = ε means pop without pushing (stack shrinks)
+ γ = A means no net change (replace A with A)
+ γ = BA means push B on top of A (stack grows)
+ Accept by final state: input consumed AND current state ∈ F
+ Accept by empty stack: input consumed AND stack is empty
+ Both acceptance modes are equivalent (can convert between them)
+Example: PDA for L = {a^n b^n | n ≥ 1}
+Config: (state, remaining input, stack)
+Action
+Next config
+(q0, aabb, Z0)
+Read a, push A
+(q0, abb, AZ0)
+(q0, abb, AZ0)
+Read a, push A
+(q0, bb, AAZ0)
+(q0, bb, AAZ0)
+Read b, switch to q1, pop A
+(q1, b, AZ0)
+(q1, b, AZ0)
+Read b, pop A
+(q1, ε, Z0)
+(q1, ε, Z0)
+Input done, state q1 ∈ F
+ACCEPT
+Equivalence: PDA ↔ Context-Free Grammar (CFG)
+
+
+Automata Theory Reference Guide
+Page 9
+Every PDA has an equivalent CFG and vice versa. To convert CFG to PDA: use leftmost derivation on the
+stack. To convert PDA to CFG: create variables A[pq] for each pair of states (p,q) representing 'stack
+net-zero paths'.
+
+
+Automata Theory Reference Guide
+Page 10
+6  Turing Machine (TM)
+The most powerful computational model — equivalent to any real computer
+Formal Definition
+A TM is a 7-tuple M = (Q, Σ, Γ, δ, q0, qaccept, qreject)
+Symbol
+Name
+Description
+Q
+States
+Finite set of states (includes qaccept and qreject)
+Σ
+Input alphabet
+Does NOT contain blank symbol ■
+Γ
+Tape alphabet
+Σ ∪ {■} ⊆ Γ (blank ■ must be in Γ)
+δ: Q'×Γ → Q×Γ×{L,R}
+Transition fn
+Read symbol, write symbol, move head Left or Right
+q0 ∈ Q
+Start state
+Machine starts here with head at leftmost input cell
+qaccept ∈ Q
+Accept state
+Immediately halts and accepts — no transitions from here
+qreject ∈ Q
+Reject state
+Immediately halts and rejects; qreject ≠ qaccept
+Turing Machine Tape
+■
+0
+1
+1
+0
+1
+0
+■
+■
+▲ read/write head
+Turing Machine Tape — infinite in both directions, head reads and writes one cell at a time
+TM Rules & Key Facts
+ Tape is INFINITE in both directions, initially filled with blanks (■)
+ Head reads ONE cell at a time, then writes a symbol and moves L or R
+ δ(q, a) = (q', b, D): in state q reading a, write b, move direction D, go to q'
+ Halting: machine halts only on qaccept or qreject (may loop forever otherwise)
+ Accepts: if computation reaches qaccept
+ Rejects: if computation reaches qreject OR loops forever (does not halt)
+ Decidable language: TM always halts (on every input) — never loops
+ Recognisable (RE) language: TM halts and accepts on strings in L; may loop on others
+ Church-Turing Thesis: any effectively computable function can be computed by a TM
+TM Transition Table Example — L = {w#w | w ∈ {0,1}*}
+
+
+Automata Theory Reference Guide
+Page 11
+State
+Read
+Write
+Move
+Next state
+Purpose
+q0
+0
+X
+R
+q1
+Mark first 0, seek match
+q0
+1
+X
+R
+q3
+Mark first 1, seek match
+q0
+#
+#
+R
+q8
+All left side done → verify
+q1
+0,1
+same
+R
+q1
+Scan right past 0s and 1s
+q1
+#
+#
+R
+q2
+Cross the # separator
+q2
+0
+X
+L
+q6
+Match found, sweep back
+q6
+X,0,1
+same
+L
+q6
+Move left back to q0 side
+q6
+X
+X
+R
+q0
+Back at start of unmatched
+q8
+X
+X
+R
+q8
+Skip matched X's
+q8
+■
+■
+—
+qaccept
+Both sides matched → ACCEPT
+Decidability & Recognisability
+Class
+TM behaviour
+Examples
+Decidable (recursive)
+Always halts; accepts L, rejects L-complement
+All CFLs, regular languages, many arithmetic theories
+Recognisable (R.E.)
+Halts & accepts on L; may loop on non-members
+L = {<M,w> | M accepts w} (halting problem is RE)
+Co-recognisable
+Halts & rejects non-members; may loop on members
+Complement of halting problem
+Undecidable
+No TM decides it (halts on all inputs)
+Halting problem, Post Correspondence Problem
+
+
+Automata Theory Reference Guide
+Page 12
+7  Hierarchy & Comparison of All Models
+Chomsky hierarchy maps each automaton type to a language class
+Chomsky Language Hierarchy
+Every regular language is context-free. Every CFL is context-sensitive. Every CSL is recursively
+enumerable. The inclusions are strict.
+Type
+Grammar
+Automaton
+Language class
+Example
+Type 3
+Regular grammar
+DFA / NFA
+Regular
+a*b, (a|b)*
+Type 2
+Context-free grammar
+PDA (nondeterministic)
+Context-free (CFL)
+{a^n b^n}
+Type 2 (det.)
+—
+DPDA
+Deterministic CFL
+Most programming languages
+Type 1
+Context-sensitive grammar
+Linear-bounded TM
+Context-sensitive
+{a^n b^n c^n}
+Type 0
+Unrestricted grammar
+Turing Machine
+Recursively enumerable
+Halting problem
+Side-by-Side Feature Comparison
+Feature
+DFA
+NFA
+ε-NFA
+PDA
+NPDA
+TM
+Memory
+None
+None
+None
+Stack
+Stack
+Infinite tape
+Determinism
+Yes
+No
+No
+Yes
+No
+Yes/No
+Languages
+Regular
+Regular
+Regular
+DCFL
+CFL
+RE
+ε-transitions
+No
+No
+Yes
+No
+No
+N/A
+Accepts by
+Final state
+Final state
+Final state
+Final state
+Final state
+Halt/accept
+Equivalent to
+NFA/regex
+DFA/regex
+DFA/NFA
+—
+CFG
+—
+Closure: union
+Yes
+Yes
+Yes
+No
+Yes
+Yes
+Closure: concat
+Yes
+Yes
+Yes
+No
+Yes
+Yes
+Closure: compl.
+Yes
+Yes
+Yes
+Yes
+No
+Yes
+Closure Properties Summary
+Operation
+Regular
+DCFL
+CFL
+CSL
+RE
+Union
+Yes
+No
+Yes
+Yes
+Yes
+Intersection
+Yes
+No
+No
+Yes
+Yes
+Complement
+Yes
+Yes
+No
+Yes
+No
+Concatenation
+Yes
+No
+Yes
+Yes
+Yes
+Kleene star
+Yes
+No
+Yes
+Yes
+Yes
+Homomorphism
+Yes
+No
+Yes
+No
+Yes
+
+
+Automata Theory Reference Guide
+Page 13
+Inverse hom.
+Yes
+Yes
+Yes
+Yes
+Yes
+Decision Problems
+Problem
+Regular
+CFL
+CSL / RE
+Membership (w ∈ L?)
+O(n) — linear scan DFA
+O(n³) — CYK algorithm
+Semi-decidable (TM)
+Emptiness (L = ∅?)
+Decidable
+Decidable
+Undecidable
+Finiteness (L finite?)
+Decidable
+Decidable
+Undecidable
+Equivalence (L1=L2?)
+Decidable
+Undecidable
+Undecidable
+Universality (L=Σ*?)
+Decidable
+Undecidable
+Undecidable
+Ambiguity
+N/A (DFA unambiguous)
+Undecidable
+Undecidable
+
+
+Automata Theory Reference Guide
+Page 14
+Quick Reference Card
+Key formulas, notations, and mnemonics for exams
+Concept
+Formula / Rule
+DFA extended transition
+δ*(q, ε) = q;  δ*(q, wa) = δ(δ*(q,w), a)
+DFA accept condition
+w ∈ L(M)  iff  δ*(q0, w) ∈ F
+ε-closure (NFA)
+ε-cl(q) = {q} ∪ ∪{ ε-cl(r) | r ∈ δ(q,ε) }
+NFA accept
+w ∈ L(N) iff ε-cl(δ*(q0,w)) ∩ F ≠ ∅
+Subset construction
+Δ(S, a) = ε-cl(∪{ δ(q,a) | q ∈ S })
+DFA states (worst case)
+|Q_DFA| ≤ 2^|Q_NFA|
+Pumping Lemma (regular)
+∀ L regular, ∃ p: ∀ w∈L, |w|≥p → w=xyz, |y|>0, |xy|≤p, xy^i z∈L
+Pumping Lemma (CFL)
+∀ L CFL, ∃ p: ∀ w∈L, |w|≥p → w=uvxyz, |vy|>0, |vxy|≤p, uv^i xy^i z∈L
+TM configuration
+(q, tape, head_pos) — 'instantaneous description'
+TM yields
+(q, αaβ) ■ (q', αbγ)  when  δ(q,a)=(q',b,R) with γ=β head moved right
+Rice's Theorem
+Any non-trivial semantic property of TM languages is undecidable
+Myhill-Nerode
+L is regular iff the equiv. classes of ≡_L are finite; |min-DFA states| = |classes|
+Common Exam Pitfalls
+DFA vs NFA power: Both recognise exactly regular languages — NFA is NOT more powerful, just more convenient
+to design
+ε-closure: Always compute ε-closure after EVERY move in NFA simulation, not just at the start
+Subset construction: The dead state ∅ must be added as a non-accepting DFA state when MOVE returns empty
+set
+PDA acceptance: By final state and by empty stack are equivalent models — specify which you are using
+TM looping: Looping forever ≠ rejecting; only qreject is a rejection. Undecidable languages cause infinite loops
+Complement of CFL: CFLs are NOT closed under complement or intersection with another CFL
+Pumping Lemma: The lemma can prove a language is NOT regular, but passing the lemma does not prove
+regularity
+Church-Turing: The thesis is a conjecture / definition, not a theorem — it cannot be formally proved
+ Automata Theory Reference Guide · Covers DFA, NFA, PDA, Turing Machines, Regular Expressions, and the Chomsky Hierarchy

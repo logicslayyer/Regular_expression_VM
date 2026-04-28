@@ -3,6 +3,7 @@ import {
   ReactFlow, Background, Controls, MiniMap,
   addEdge, useNodesState, useEdgesState, BackgroundVariant,
   type Node, type Edge, type OnConnect,
+  Position,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useAutomataStore } from '../../store/useAutomataStore';
@@ -14,11 +15,35 @@ import { DFA } from '../../engine/subset-construction';
 const nodeTypes = { stateNode: CustomStateNode };
 const edgeTypes = { customEdge: CustomEdge };
 
-// Layout helper: arrange nodes in a circle
-function layoutNodes(states: { id: string; isStart: boolean; isAccepting: boolean; label?: string }[]) {
+// Improved layout: force-directed-like placement
+function layoutNodes(
+  states: { id: string; isStart: boolean; isAccepting: boolean; label?: string }[],
+  transitions: { from: string; to: string; symbol: string }[]
+) {
   const n = states.length;
-  const radius = Math.min(220, Math.max(100, n * 40));
-  const cx = 400, cy = 300;
+  if (n === 0) return [];
+
+  if (n <= 8) {
+    // Use circle layout for cleaner rendering with all edge directions
+    const radius = Math.max(120, n * 50);
+    const cx = 400, cy = 300;
+    return states.map((s, i) => {
+      const angle = (2 * Math.PI * i) / n - Math.PI / 2;
+      return {
+        id: s.id,
+        type: 'stateNode',
+        position: {
+          x: cx + radius * Math.cos(angle),
+          y: cy + radius * Math.sin(angle),
+        },
+        data: { label: s.label || s.id, isStart: s.isStart, isAccepting: s.isAccepting },
+      };
+    });
+  }
+
+  // Larger graphs: circle
+  const radius = Math.min(300, Math.max(150, n * 42));
+  const cx = 400, cy = 320;
   return states.map((s, i) => {
     const angle = (2 * Math.PI * i) / n - Math.PI / 2;
     return {
@@ -38,16 +63,39 @@ function buildEdges(transitions: { from: string; to: string; symbol: string }[])
     if (!grouped.has(key)) grouped.set(key, []);
     grouped.get(key)!.push(t.symbol);
   }
+
+  // Track bidirectional pairs
+  const biDirectional = new Set<string>();
+  for (const key of grouped.keys()) {
+    const [from, to] = key.split('→');
+    const reverseKey = `${to}→${from}`;
+    if (from !== to && grouped.has(reverseKey)) {
+      biDirectional.add(key);
+    }
+  }
+
   const edges: Edge[] = [];
   for (const [key, symbols] of grouped.entries()) {
     const [from, to] = key.split('→');
+    const isSelf = from === to;
+    const isBiDir = biDirectional.has(key);
+
     edges.push({
-      id: `${from}-${to}`,
+      id: `edge-${from}-${to}`,
       source: from,
       target: to,
       type: 'customEdge',
       label: symbols.join(', '),
-      data: { label: symbols.join(', '), isSelfLoop: from === to },
+      data: {
+        label: symbols.join(', '),
+        isSelfLoop: isSelf,
+        isBiDirectional: isBiDir,
+      },
+      // For bidirectional edges, use different source/target handles
+      ...(isBiDir ? {
+        sourceHandle: 'source-top',
+        targetHandle: 'target-top',
+      } : {}),
     });
   }
   return edges;
@@ -67,7 +115,8 @@ export const AutomataCanvas: React.FC = () => {
   useEffect(() => {
     let automaton: NFA | DFA | null = null;
     if (activeSubTab === 're-nfa') automaton = nfa;
-    else automaton = minimizedDFA || dfa || nfa;
+    else if (activeSubTab === 'dfa-min') automaton = minimizedDFA || dfa || nfa;
+    else automaton = dfa || nfa;
 
     if (!automaton) {
       setNodes([]);
@@ -75,16 +124,19 @@ export const AutomataCanvas: React.FC = () => {
       return;
     }
 
-    const newNodes = layoutNodes(automaton.states.map(s => ({
-      id: s.id,
-      isStart: s.isStart,
-      isAccepting: s.isAccepting,
-      label: s.id,
-    })));
+    const newNodes = layoutNodes(
+      automaton.states.map(s => ({
+        id: s.id,
+        isStart: s.isStart,
+        isAccepting: s.isAccepting,
+        label: s.id,
+      })),
+      automaton.transitions
+    );
     const newEdges = buildEdges(automaton.transitions);
     setNodes(newNodes as any);
     setEdges(newEdges as any);
-  }, [nfa, dfa, activeSubTab]);
+  }, [nfa, dfa, minimizedDFA, activeSubTab]);
 
   // Update active state highlights
   useEffect(() => {
@@ -138,7 +190,7 @@ export const AutomataCanvas: React.FC = () => {
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         fitView
-        fitViewOptions={{ padding: 0.3 }}
+        fitViewOptions={{ padding: 0.4 }}
         proOptions={{ hideAttribution: true }}
         style={{ background: 'var(--bg-base)' }}
       >
