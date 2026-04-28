@@ -33,6 +33,38 @@
   --transition-fast: 150ms cubic-bezier(0.4,0,0.2,1);
   --transition-std:  300ms cubic-bezier(0.4,0,0.2,1);
   --transition-slow: 600ms cubic-bezier(0.4,0,0.2,1);
+  --panel-bg: rgba(255,255,255,0.04);
+  --panel-bg-hover: rgba(255,255,255,0.07);
+  --control-bg: rgba(255,255,255,0.05);
+  --chip-bg: rgba(255,255,255,0.04);
+  --chip-border: rgba(255,255,255,0.08);
+  --overlay-bg: rgba(19,22,30,0.8);
+  --node-fill: var(--bg-elevated);
+  --node-border: rgba(255,255,255,0.15);
+  --scrollbar-track: var(--bg-surface);
+  --scrollbar-thumb: rgba(255,255,255,0.12);
+  --scrollbar-thumb-hover: rgba(255,255,255,0.22);
+}
+
+:root[data-theme='light'] {
+  --bg-base: #f5f7fb;
+  --bg-surface: #ffffff;
+  --bg-elevated: #edf2f7;
+  --border: rgba(15,23,42,0.10);
+  --text-primary: #0f172a;
+  --text-muted: #475569;
+  --text-code: #0f766e;
+  --panel-bg: rgba(255,255,255,0.78);
+  --panel-bg-hover: rgba(255,255,255,0.92);
+  --control-bg: rgba(255,255,255,0.78);
+  --chip-bg: rgba(15,23,42,0.04);
+  --chip-border: rgba(15,23,42,0.08);
+  --overlay-bg: rgba(255,255,255,0.86);
+  --node-fill: #ffffff;
+  --node-border: rgba(15,23,42,0.16);
+  --scrollbar-track: #edf2f7;
+  --scrollbar-thumb: rgba(15,23,42,0.18);
+  --scrollbar-thumb-hover: rgba(15,23,42,0.28);
 }
 
 /* ── Base Reset ── */
@@ -51,9 +83,9 @@ html, body, #root {
 
 /* ── Scrollbar Styles ── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--bg-surface); }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
+::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
 
 /* ── Typography ── */
 .font-mono { font-family: var(--font-mono) !important; }
@@ -61,7 +93,7 @@ html, body, #root {
 
 /* ── Glassmorphism Utility ── */
 .glass {
-  background: rgba(255,255,255,0.04);
+  background: var(--panel-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border);
@@ -71,7 +103,7 @@ html, body, #root {
   transition: all var(--transition-fast);
 }
 .glass-hover:hover {
-  background: rgba(255,255,255,0.07);
+  background: var(--panel-bg-hover);
   border-color: rgba(0,245,212,0.3);
   box-shadow: var(--shadow-glow-cyan);
 }
@@ -97,7 +129,7 @@ html, body, #root {
 .tab-pill:hover {
   color: var(--text-primary);
   border-color: var(--border);
-  background: rgba(255,255,255,0.05);
+  background: var(--chip-bg);
 }
 .tab-pill.active {
   background: linear-gradient(135deg, rgba(0,245,212,0.15), rgba(139,92,246,0.15));
@@ -118,11 +150,11 @@ html, body, #root {
   cursor: pointer;
   border: 1px solid var(--border);
   transition: all var(--transition-fast);
-  background: rgba(255,255,255,0.04);
+  background: var(--control-bg);
   color: var(--text-primary);
   font-family: var(--font-display);
 }
-.btn:hover { background: rgba(255,255,255,0.08); }
+.btn:hover { background: var(--panel-bg-hover); }
 .btn:active { transform: scale(0.97); }
 
 .btn-primary {
@@ -152,8 +184,8 @@ html, body, #root {
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--chip-border);
+  background: var(--chip-bg);
   backdrop-filter: blur(8px);
   color: var(--text-primary);
   transition: all var(--transition-fast);
@@ -182,8 +214,8 @@ html, body, #root {
   height: 36px;
   border-radius: 50%;
   cursor: pointer;
-  border: 1px solid rgba(255,255,255,0.1);
-  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--chip-border);
+  background: var(--control-bg);
   color: var(--text-primary);
   transition: all var(--transition-fast);
 }
@@ -209,8 +241,8 @@ html, body, #root {
   font-family: var(--font-mono);
   font-size: 13px;
   font-weight: 600;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--chip-border);
+  background: var(--chip-bg);
   color: var(--text-muted);
   transition: all var(--transition-std);
 }
@@ -237,7 +269,7 @@ html, body, #root {
   transition: background var(--transition-fast);
   animation: slideInRight 0.2s ease-out;
 }
-.trace-entry:hover { background: rgba(255,255,255,0.04); }
+.trace-entry:hover { background: var(--chip-bg); }
 .trace-entry.current {
   background: rgba(0,245,212,0.08);
   color: var(--accent-cyan);
@@ -273,6 +305,33 @@ html, body, #root {
   margin-bottom: 8px;
 }
 
+.math-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,245,212,0.18);
+  background: rgba(0,245,212,0.06);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.math-chip.accepting {
+  border-color: rgba(139,92,246,0.28);
+  background: rgba(139,92,246,0.08);
+}
+
+.transition-entry {
+  border-radius: 12px;
+  padding: 10px 12px;
+  transition: all var(--transition-fast);
+}
+
+.transition-entry:hover {
+  transform: translateY(-1px);
+}
+
 /* ── Sub Tab Bar ── */
 .sub-tab {
   padding: 5px 12px;
@@ -285,7 +344,7 @@ html, body, #root {
   transition: all var(--transition-fast);
   white-space: nowrap;
 }
-.sub-tab:hover { color: var(--text-primary); background: rgba(255,255,255,0.04); }
+.sub-tab:hover { color: var(--text-primary); background: var(--chip-bg); }
 .sub-tab.active {
   background: rgba(139,92,246,0.15);
   border-color: rgba(139,92,246,0.4);
@@ -301,8 +360,8 @@ html, body, #root {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.15);
-  background: var(--bg-elevated);
+  border: 2px solid var(--node-border);
+  background: var(--node-fill);
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 600;
@@ -343,6 +402,27 @@ html, body, #root {
   color: var(--accent-red);
   box-shadow: var(--shadow-glow-red);
   animation: shake 0.5s ease-out;
+}
+.state-node.selected {
+  box-shadow: 0 0 0 1px rgba(0,245,212,0.4), var(--shadow-glow-cyan);
+}
+.state-node.hovered {
+  transform: translateY(-1px) scale(1.02);
+}
+.state-node.dead {
+  border-color: var(--accent-red);
+  background: rgba(248,113,113,0.08);
+  color: var(--accent-red);
+  box-shadow: var(--shadow-glow-red);
+}
+.state-node.dead::after {
+  content: '';
+  position: absolute;
+  inset: -7px;
+  border-radius: 50%;
+  border: 2px solid var(--accent-red);
+  opacity: 0.9;
+  pointer-events: none;
 }
 .state-node.nfa-active {
   border-color: var(--accent-violet);

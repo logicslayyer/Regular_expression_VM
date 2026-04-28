@@ -21,16 +21,22 @@ const TAB_COMPONENTS = {
 // Tabs that need the sidebar
 const TABS_WITH_SIDEBAR = ['studio', 'grammar', 'complexity'];
 // Tabs that need the bottom bar
-const TABS_WITH_BOTTOM = ['studio', 'pda-tm', 'complexity'];
+const TABS_WITH_BOTTOM = ['pda-tm', 'complexity'];
 // Tabs that need the right panel
-const TABS_WITH_RIGHT = ['studio', 'pda-tm'];
+const TABS_WITH_RIGHT = ['pda-tm'];
 
 function App() {
-  const { activeTab } = useAutomataStore();
+  const { activeTab, theme } = useAutomataStore();
   const ActiveTabComponent = TAB_COMPONENTS[activeTab as keyof typeof TAB_COMPONENTS];
   const showSidebar = TABS_WITH_SIDEBAR.includes(activeTab);
   const showBottom  = TABS_WITH_BOTTOM.includes(activeTab);
   const showRight   = TABS_WITH_RIGHT.includes(activeTab);
+
+  React.useLayoutEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.style.colorScheme = theme;
+    window.localStorage.setItem('automata-theme', theme);
+  }, [theme]);
 
   return (
     <div style={{

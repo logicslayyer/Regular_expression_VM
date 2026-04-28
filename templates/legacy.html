@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Regex Virtual Machine</title>
+    <!-- Google Fonts for Modern Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Cytoscape for Network Graphs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.26.0/cytoscape.min.js"></script>
+</head>
+<body>
+    <div class="background-elements">
+        <div class="glow glow-1"></div>
+        <div class="glow glow-2"></div>
+    </div>
+
+    <main class="glass-container">
+        <header>
+            <h1>Regex Virtual Machine</h1>
+            <p>Design, convert, and simulate finite automata powered by Thompson's Construction & Powerset algorithms.</p>
+        </header>
+
+        <section class="controls">
+            <div class="input-group">
+                <label for="regexInput">Regular Expression</label>
+                <div class="input-row">
+                    <input type="text" id="regexInput" placeholder="(e.g., (a|b)*abb)" autocomplete="off">
+                    <button id="buildBtn" class="btn btn-primary">
+                        <span>Build Automata</span>
+                    </button>
+                </div>
+                <div id="parseSteps" class="parse-steps text-dim"></div>
+            </div>
+
+            <div class="input-group">
+                <label for="testInput">Simulation Test String</label>
+                <div class="input-row">
+                    <input type="text" id="testInput" placeholder="(e.g., ababb)" autocomplete="off">
+                    <button id="simBtn" class="btn btn-secondary">
+                        <span>Simulate</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <div id="simResult" class="sim-result hidden">
+            <h3 id="simVerdict"></h3>
+            <div id="simTrace" class="sim-trace"></div>
+        </div>
+
+        <section class="visualizers">
+            <div class="viz-card">
+                <div class="viz-header">
+                    <h2>NFA Diagram</h2>
+                </div>
+                <div id="cy-nfa" class="cy-canvas"></div>
+            </div>
+            <div class="viz-card">
+                <div class="viz-header">
+                    <h2>DFA Diagram</h2>
+                </div>
+                <div id="cy-dfa" class="cy-canvas"></div>
+            </div>
+        </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

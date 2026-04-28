@@ -111,19 +111,21 @@ export function minimizeDFA(dfa: DFA): { minimizedDFA: DFA; steps: MinimizationS
   const minTransitions: DFATransition[] = [];
   let minStateIdx = 0;
   const groupIdMap = new Map<string, string>();
+  const stateById = new Map(states.map(s => [s.id, s] as const));
 
   for (const [rep, group] of groupMap.entries()) {
     const minId = `q${minStateIdx++}`;
     groupIdMap.set(rep, minId);
+    const isDeadGroup = group.some(id => stateById.get(id)?.isDead || stateById.get(id)?.label === 'Ø' || stateById.get(id)?.label === '∅');
     minStates.push({
       id: minId,
-      label: `{${group.join(',')}}`,
+      label: minId,
       nfaStates: group,
       isStart: group.includes(dfa.startState),
       isAccepting: group.some(id => dfa.acceptingStates.includes(id)),
+      isDead: isDeadGroup,
     });
   }
-
   // Build transitions
   const seen = new Set<string>();
   for (const t of dfa.transitions) {

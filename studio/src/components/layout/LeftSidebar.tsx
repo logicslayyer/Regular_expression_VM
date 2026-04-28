@@ -4,11 +4,10 @@ import { RegexCalculator } from '../input/RegexCalculator';
 import { CFGBuilder } from '../input/CFGBuilder';
 import { buildNFA } from '../../engine/thompson';
 import { buildDFA } from '../../engine/subset-construction';
-import { minimizeDFA } from '../../engine/dfa-minimization';
 import { ChevronDown, ChevronUp, Zap, GitBranch, Minimize2 } from 'lucide-react';
 
 export const LeftSidebar: React.FC = () => {
-  const { activeTab, setNFA, setDFA, setMinimizedDFA, dfa, currentExpression } = useAutomataStore();
+  const { activeTab, setNFA, setDFA, setMinimizedDFA, currentExpression } = useAutomataStore();
   const [alphaOpen, setAlphaOpen] = useState(false);
   const [alphabetInput, setAlphabetInput] = useState('a, b');
 
@@ -17,6 +16,8 @@ export const LeftSidebar: React.FC = () => {
     try {
       const nfa = buildNFA(currentExpression);
       setNFA(nfa);
+      setDFA(null as any);
+      setMinimizedDFA(null as any);
     } catch (e) {
       console.error(e);
     }
@@ -26,19 +27,10 @@ export const LeftSidebar: React.FC = () => {
     if (!currentExpression) return;
     try {
       const nfa = buildNFA(currentExpression);
-      const dfaResult = buildDFA(nfa);
+      const dfa = buildDFA(nfa);
       setNFA(nfa);
-      setDFA(dfaResult);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handleMinimizeDFA = () => {
-    if (!dfa) return;
-    try {
-      const { minimizedDFA } = minimizeDFA(dfa);
-      setMinimizedDFA(minimizedDFA);
+      setDFA(dfa);
+      setMinimizedDFA(null as any);
     } catch (e) {
       console.error(e);
     }
@@ -114,7 +106,7 @@ export const LeftSidebar: React.FC = () => {
             <GitBranch size={13} />
             Generate DFA
           </button>
-          <button className="btn btn-ghost" onClick={handleMinimizeDFA} style={{ width: '100%', justifyContent: 'center', fontSize: '12px' }}>
+          <button className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center', fontSize: '12px' }}>
             <Minimize2 size={13} />
             Minimize DFA
           </button>

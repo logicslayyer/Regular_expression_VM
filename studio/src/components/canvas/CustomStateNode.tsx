@@ -1,109 +1,93 @@
 import React, { memo } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
+import { useAutomataStore } from '../../store/useAutomataStore';
 
-interface StateNodeData {
+type StateNodeData = Record<string, unknown> & {
   label: string;
   isStart?: boolean;
   isAccepting?: boolean;
   isActive?: boolean;
   isRejected?: boolean;
   isNFAActive?: boolean;
-}
+  isDead?: boolean;
+};
 
-export const CustomStateNode = memo(({ data }: NodeProps) => {
-  const d = data as StateNodeData;
+type StateNode = Node<StateNodeData, 'stateNode'>;
 
-  const isActive = d.isActive;
-  const isAccepting = d.isAccepting;
-  const isRejected = d.isRejected;
+export const CustomStateNode = memo(({ id, data }: NodeProps<StateNode>) => {
+  const { selectedStateId, hoveredStateId, hoveredTransitionKey, selectedTransitionKey, setSelectedStateId, setHoveredStateId, setSelectedTransitionKey } =
+    useAutomataStore();
 
-  let borderColor = 'rgba(0, 245, 212, 0.3)';
-  let bgColor = 'var(--bg-elevated)';
-  let textColor = 'rgba(0, 245, 212, 0.9)';
-  let shadow = 'none';
+  const d = data;
+  const relatedTransition = hoveredTransitionKey?.startsWith(`${id}::`) || selectedTransitionKey?.startsWith(`${id}::`);
+  const isSelected = selectedStateId === id;
+  const isHovered = hoveredStateId === id;
 
-  if (isActive) {
-    borderColor = 'var(--accent-cyan)';
-    bgColor = 'rgba(0, 245, 212, 0.12)';
-    textColor = 'var(--accent-cyan)';
-    shadow = '0 0 24px rgba(0,245,212,0.4), inset 0 0 12px rgba(0,245,212,0.08)';
-  } else if (isRejected) {
-    borderColor = 'var(--accent-red)';
-    bgColor = 'rgba(248,113,113,0.12)';
-    textColor = 'var(--accent-red)';
-    shadow = '0 0 24px rgba(248,113,113,0.4)';
-  } else if (isAccepting) {
-    borderColor = 'var(--accent-cyan)';
-    bgColor = 'rgba(0, 245, 212, 0.06)';
-    textColor = 'var(--accent-cyan)';
-  }
+  let nodeClass = 'state-node';
+  if (d.isActive) nodeClass += ' active';
+  else if (d.isRejected) nodeClass += ' rejected';
+  else if (d.isNFAActive) nodeClass += ' nfa-active';
+  if (d.isDead) nodeClass += ' dead';
+  if (isSelected) nodeClass += ' selected';
+  if (isHovered || relatedTransition) nodeClass += ' hovered';
 
   return (
     <div
+      className={nodeClass}
+      onClick={() => setSelectedStateId(id)}
+      onMouseEnter={() => setHoveredStateId(id)}
+      onMouseLeave={() => setHoveredStateId(null)}
+      onDoubleClick={() => setSelectedTransitionKey(null)}
       style={{
         position: 'relative',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '56px',
-        height: '56px',
-        borderRadius: '50%',
-        border: `2px solid ${borderColor}`,
-        background: bgColor,
-        boxShadow: shadow,
-        transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)',
-        cursor: 'pointer',
+        ...(d.isAccepting && !d.isDead ? { outline: '2px solid var(--accent-cyan)', outlineOffset: '5px' } : {}),
       }}
     >
       {d.isStart && (
-        <div style={{
-          position: 'absolute',
-          left: '-30px', top: '50%',
-          transform: 'translateY(-50%)',
-          display: 'flex', alignItems: 'center',
-        }}>
-          <div style={{ width: '20px', height: '2px', background: 'var(--accent-cyan)' }} />
-          <div style={{
-            width: 0, height: 0,
-            borderTop: '6px solid transparent',
-            borderBottom: '6px solid transparent',
-            borderLeft: '9px solid var(--accent-cyan)',
-          }} />
+        <div
+          style={{
+            position: 'absolute',
+            left: '-28px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '2px',
+          }}
+        >
+          <div style={{ width: '18px', height: '2px', background: 'var(--accent-cyan)' }} />
+          <div
+            style={{
+              width: 0,
+              height: 0,
+              borderTop: '5px solid transparent',
+              borderBottom: '5px solid transparent',
+              borderLeft: '8px solid var(--accent-cyan)',
+            }}
+          />
         </div>
       )}
 
-      {isAccepting && (
-        <div style={{
-          position: 'absolute', inset: '-7px', borderRadius: '50%',
-          border: `2px solid ${isActive ? 'var(--accent-cyan)' : 'rgba(0,245,212,0.4)'}`,
-          pointerEvents: 'none', transition: 'all 0.3s',
-        }} />
+      {d.isAccepting && !d.isDead && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: '-8px',
+            borderRadius: '50%',
+            border: '2px solid rgba(0,245,212,0.5)',
+            pointerEvents: 'none',
+          }}
+        />
       )}
 
-      {isActive && (
-        <div style={{
-          position: 'absolute', inset: '-12px', borderRadius: '50%',
-          border: '1px solid rgba(0,245,212,0.2)',
-          pointerEvents: 'none', animation: 'pulseRing 1.5s ease-out infinite',
-        }} />
-      )}
-
-      <span style={{
-        fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 700,
-        userSelect: 'none', color: textColor, letterSpacing: '0.02em',
-      }}>
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600, userSelect: 'none' }}>
         {String(d.label)}
       </span>
 
-      {/* Handles on all 4 sides for flexible edge routing */}
-      <Handle type="target" position={Position.Left} id="target-left" style={{ opacity: 0 }} />
-      <Handle type="source" position={Position.Right} id="source-right" style={{ opacity: 0 }} />
-      <Handle type="target" position={Position.Top} id="target-top" style={{ opacity: 0 }} />
-      <Handle type="source" position={Position.Top} id="source-top" style={{ opacity: 0 }} />
-      <Handle type="target" position={Position.Bottom} id="target-bottom" style={{ opacity: 0 }} />
-      <Handle type="source" position={Position.Bottom} id="source-bottom" style={{ opacity: 0 }} />
-      <Handle type="target" position={Position.Right} id="target-right" style={{ opacity: 0 }} />
-      <Handle type="source" position={Position.Left} id="source-left" style={{ opacity: 0 }} />
+      <Handle type="target" position={Position.Left} style={{ opacity: 0 }} />
+      <Handle type="source" position={Position.Right} style={{ opacity: 0 }} />
+      <Handle type="source" position={Position.Top} id="top-source" style={{ opacity: 0 }} />
+      <Handle type="target" position={Position.Top} id="top-target" style={{ opacity: 0 }} />
     </div>
   );
 });

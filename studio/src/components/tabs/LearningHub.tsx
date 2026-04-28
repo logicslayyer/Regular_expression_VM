@@ -150,7 +150,7 @@ For a set of states S, the **ε-closure** is the set of all states reachable fro
 ### Complexity
 NFA with n states → DFA with at most **2ⁿ** states (worst case)`
   },
-  p_np: {
+  'p-np': {
     title: 'P vs NP',
     content: `## P vs NP
 
@@ -278,6 +278,88 @@ For problem X to be NP-complete:
 - **Boolean SAT:** Is there an assignment of True/False to a boolean formula that makes it True?
 - **Traveling Salesman (Decision):** Is there a route visiting all cities under distance D?
 - **Graph Coloring:** Can a map be colored with K colors without adjacent regions matching?`
+  },
+  cnf: {
+    title: 'Chomsky Normal Form',
+    content: `## Chomsky Normal Form (CNF)
+
+A Context-Free Grammar is in Chomsky Normal Form if every rule is of the form:
+- **A → BC** (a variable generates two variables)
+- **A → a** (a variable generates one terminal)
+- **S → ε** (start variable generates empty string, if ε is in the language)
+
+### Why CNF?
+- It standardizes CFGs, making them easier to parse.
+- Any CFG can be converted into an equivalent CFG in CNF.
+- If a grammar is in CNF, any derivation of a string of length **n** requires exactly **2n - 1** steps.
+- Required for algorithms like the **CYK Algorithm**.`
+  },
+  'pda-theory': {
+    title: 'Pushdown Automata',
+    content: `## Pushdown Automata (PDA)
+
+A Pushdown Automaton is essentially a Finite Automaton equipped with a **Stack** (LIFO memory). It is the computational model equivalent to Context-Free Grammars.
+
+### Components
+- Finite control (states and transitions)
+- Input tape (read-only, left-to-right)
+- **Stack** (infinite capacity, but can only access the top element)
+
+### Transitions
+A transition depends on:
+1. Current State
+2. Current Input Symbol (or ε)
+3. Top Symbol of the Stack
+
+In a single step, the PDA can change state and **push** or **pop** symbols from the stack.
+
+### Power
+Because of the stack, PDAs can recognize languages like \`L = {aⁿbⁿ | n ≥ 0}\`, which are not regular. However, they cannot recognize \`L = {aⁿbⁿcⁿ | n ≥ 0}\` (which requires a Turing Machine).`
+  },
+  decidability: {
+    title: 'Decidability',
+    content: `## Decidability
+
+In computability theory, a language is **decidable** (or recursive) if there exists a Turing Machine that always halts and correctly accepts or rejects every input string.
+
+### Decidable vs Recognizable
+- **Turing-Decidable**: TM always halts (accepts or rejects).
+- **Turing-Recognizable**: TM accepts valid strings, but might loop forever on invalid ones.
+
+### Key Results
+- Every decidable language is recognizable.
+- Not every recognizable language is decidable (e.g., the Halting Problem).
+- A language is decidable if and only if both it and its complement are Turing-recognizable.`
+  },
+  reductions: {
+    title: 'Mapping Reductions',
+    content: `## Mapping Reductions
+
+A reduction is a way of converting one problem into another in such a way that a solution to the second problem can be used to solve the first.
+
+### Definition
+Language A is **mapping reducible** to Language B (denoted A ≤_m B) if there is a computable function **f** such that for every input **w**:
+- **w ∈ A** if and only if **f(w) ∈ B**.
+
+### Implications
+- If A ≤_m B and B is decidable, then A is decidable.
+- If A ≤_m B and A is undecidable, then B is undecidable.
+
+Reductions are the primary tool used to prove that a problem is undecidable (by reducing the Halting Problem to it) or NP-Complete.`
+  },
+  sat: {
+    title: 'SAT & Reductions',
+    content: `## Boolean Satisfiability (SAT)
+
+The Boolean Satisfiability Problem (SAT) asks whether there exists an assignment of truth values (True/False) to a set of boolean variables that makes the entire boolean formula evaluate to True.
+
+### 3-SAT
+A special case of SAT where the formula is in Conjunctive Normal Form (CNF), and each clause has exactly 3 literals. (e.g., \`(x₁ ∨ ¬x₂ ∨ x₃) ∧ (¬x₁ ∨ x₄ ∨ x₂)\`).
+
+### Importance in Complexity
+- **Cook-Levin Theorem**: SAT is the first known **NP-Complete** problem.
+- **Reductions**: To prove a new problem X is NP-Complete, we often show that 3-SAT ≤_p X (3-SAT polynomial-time reduces to X).
+- Practically, efficient SAT solvers are used extensively in hardware verification, AI, and constraint solving.`
   },
   'video-lectures': {
     title: 'Video Lectures',

@@ -1,15 +1,62 @@
-from flask import Flask, render_template, request, jsonify
+from pathlib import Path
+
+from flask import Flask, render_template, request, jsonify, send_from_directory, abort, Response
 from regex_parser import insert_explicit_concat, infix_to_postfix
 from automata import postfix_to_nfa, nfa_to_dfa, simulate_dfa, format_nfa_cyto, format_dfa_cyto
 
 app = Flask(__name__)
+BASE_DIR = Path(__file__).resolve().parent
+STUDIO_DIST = BASE_DIR / "studio" / "dist"
+STUDIO_ASSETS = STUDIO_DIST / "assets"
 
 # In-memory storage for prototype
 current_dfa = None
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return latest_index()
+
+@app.route('/legacy')
+def legacy_index():
+    return render_template('legacy.html')
+
+@app.route('/latest')
+@app.route('/latest/<path:subpath>')
+def latest_index(subpath: str = ''):
+    index_file = STUDIO_DIST / "index.html"
+    if not index_file.exists():
+        abort(404, description="Latest UI build not found. Run `npm run build` in `studio/` first.")
+
+    if subpath:
+      candidate = STUDIO_DIST / subpath
+      if candidate.exists() and candidate.is_file():
+          return send_from_directory(STUDIO_DIST, subpath)
+
+    return send_from_directory(STUDIO_DIST, "index.html")
+
+@app.route('/assets/<path:filename>')
+def latest_assets(filename):
+    asset_file = STUDIO_ASSETS / filename
+    if not asset_file.exists():
+        abort(404)
+    return send_from_directory(STUDIO_ASSETS, filename)
+
+@app.route('/prof_anuja.png')
+def studio_portrait():
+    portrait = STUDIO_DIST / "prof_anuja.png"
+    if not portrait.exists():
+        abort(404)
+    return send_from_directory(STUDIO_DIST, "prof_anuja.png")
+
+@app.route('/vite.svg')
+def vite_icon():
+    return Response(
+        """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+  <path d="M12 2L3 19.5L12 22L21 19.5L12 2Z" fill="#0ea5e9"/>
+  <path d="M12 6.2L16.9 18.1L12 19.5L7.1 18.1L12 6.2Z" fill="#22c55e"/>
+</svg>""",
+        mimetype="image/svg+xml",
+    )
 
 @app.route('/api/build', methods=['POST'])
 def build_automata():

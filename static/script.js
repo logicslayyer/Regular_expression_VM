@@ -102,6 +102,10 @@ const cyDfa = cytoscape({
 // ------------------------------------
 let dfaTrace = [];
 
+function clearHighlights(cy) {
+  cy.elements().removeClass('highlighted');
+}
+
 // ------------------------------------
 // Build Automata Button
 // ------------------------------------
@@ -145,6 +149,8 @@ document.getElementById('buildBtn').addEventListener('click', async () => {
     cyDfa.layout({ name: 'breadthfirst', directed: true, padding: 30 }).run();
     cyDfa.fit();
 
+    clearHighlights(cyDfa);
+
     document.getElementById('simResult').classList.add('hidden');
 
   } catch (e) {
@@ -164,6 +170,7 @@ document.getElementById('simBtn').addEventListener('click', async () => {
   const btn = document.getElementById('simBtn');
   btn.innerHTML = '<span>Simulating...</span>';
   btn.disabled = true;
+  clearHighlights(cyDfa);
 
   try {
     const response = await fetch('/api/simulate', {
@@ -196,9 +203,13 @@ document.getElementById('simBtn').addEventListener('click', async () => {
     const traceDiv = document.getElementById('simTrace');
     traceDiv.innerHTML = '';
 
-    // Show steps (first step is "START" sentinel)
-    for (let i = 1; i < dfaTrace.length - 1; i++) {
+    // Show steps after the START sentinel.
+    for (let i = 1; i < dfaTrace.length; i++) {
       const [from, char, to] = dfaTrace[i];
+      if (char === 'END') {
+        break;
+      }
+
       const stepEl = document.createElement('span');
       stepEl.className = 'trace-step';
       stepEl.textContent = `d${from}`;
@@ -209,7 +220,7 @@ document.getElementById('simBtn').addEventListener('click', async () => {
       arrowEl.textContent = ` —${char}→ `;
       traceDiv.appendChild(arrowEl);
 
-      if (i === dfaTrace.length - 2) {
+      if (i === dfaTrace.length - 2 || to === null) {
         const finalEl = document.createElement('span');
         finalEl.className = `trace-step ${accepted ? 'status-accepted' : 'status-rejected'}`;
         finalEl.textContent = to !== null ? `d${to}` : '∅';
@@ -219,10 +230,10 @@ document.getElementById('simBtn').addEventListener('click', async () => {
 
     // Handle empty string edge case
     if (dfaTrace.length === 2) {
-      const [from] = dfaTrace[0];
+      const startState = dfaTrace[0]?.[2] ?? 0;
       const stepEl = document.createElement('span');
       stepEl.className = `trace-step ${accepted ? 'status-accepted' : 'status-rejected'}`;
-      stepEl.textContent = `d0 (empty string)`;
+      stepEl.textContent = `d${startState} (empty string)`;
       traceDiv.appendChild(stepEl);
     }
 
@@ -243,7 +254,7 @@ document.getElementById('simBtn').addEventListener('click', async () => {
 // ------------------------------------
 function animateTrace(trace, cy) {
   // Reset all highlighting
-  cy.elements().removeClass('highlighted');
+  clearHighlights(cy);
 
   let step = 0;
 
@@ -254,8 +265,10 @@ function animateTrace(trace, cy) {
 
     // For "START" sentinel, just highlight start node
     if (from === 'START') {
-      const nextNode = cy.$(`#d${to}`);
-      nextNode.addClass('highlighted');
+      if (typeof to === 'number') {
+        const nextNode = cy.$(`#d${to}`);
+        nextNode.addClass('highlighted');
+      }
       step++;
       setTimeout(highlightStep, 700);
       return;

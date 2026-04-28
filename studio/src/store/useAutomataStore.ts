@@ -11,12 +11,20 @@ export type SubTabId = 're-nfa' | 'nfa-dfa' | 'dfa-min' | 'ardens' | 'simulation
 export type AutomatonType = 'DFA' | 'NFA' | 'PDA' | 'TM';
 export type SimulationStatus = 'idle' | 'running' | 'paused' | 'accepted' | 'rejected';
 export type Speed = 'slow' | 'normal' | 'fast';
+export type ThemeMode = 'dark' | 'light';
 
 export const SPEED_MS: Record<Speed, number> = {
   slow: 800,
   normal: 400,
   fast: 150,
 };
+
+function getInitialTheme(): ThemeMode {
+  if (typeof window === 'undefined') return 'dark';
+  const saved = window.localStorage.getItem('automata-theme');
+  if (saved === 'dark' || saved === 'light') return saved;
+  return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+}
 
 export interface SimulationStep {
   stepIndex: number;
@@ -55,6 +63,11 @@ export interface AutomataStore {
   activeSubTab: SubTabId;
   rightPanelOpen: boolean;
   pdaSubTab: 'pda' | 'tm';
+  theme: ThemeMode;
+  selectedStateId: string | null;
+  selectedTransitionKey: string | null;
+  hoveredStateId: string | null;
+  hoveredTransitionKey: string | null;
 
   // RE builder
   currentExpression: string;
@@ -87,6 +100,13 @@ export interface AutomataStore {
   setActiveSubTab: (tab: SubTabId) => void;
   setRightPanelOpen: (open: boolean) => void;
   setPdaSubTab: (tab: 'pda' | 'tm') => void;
+  setTheme: (theme: ThemeMode) => void;
+  toggleTheme: () => void;
+  setSelectedStateId: (stateId: string | null) => void;
+  setSelectedTransitionKey: (transitionKey: string | null) => void;
+  setHoveredStateId: (stateId: string | null) => void;
+  setHoveredTransitionKey: (transitionKey: string | null) => void;
+  clearInspectionFocus: () => void;
   appendToExpression: (char: string) => void;
   backspaceExpression: () => void;
   clearExpression: () => void;
@@ -122,6 +142,11 @@ export const useAutomataStore = create<AutomataStore>((set) => ({
   activeSubTab: 're-nfa',
   rightPanelOpen: true,
   pdaSubTab: 'pda',
+  theme: getInitialTheme(),
+  selectedStateId: null,
+  selectedTransitionKey: null,
+  hoveredStateId: null,
+  hoveredTransitionKey: null,
 
   currentExpression: '',
   alphabet: ['a', 'b'],
@@ -131,9 +156,29 @@ export const useAutomataStore = create<AutomataStore>((set) => ({
   cfgRules: [{ lhs: 'S', rhs: 'AB' }, { lhs: 'A', rhs: 'a' }, { lhs: 'B', rhs: 'b' }],
 
   // Actions
-  setNFA: (nfa) => set({ nfa, automatonType: 'NFA' }),
-  setDFA: (dfa) => set({ dfa, automatonType: 'DFA' }),
-  setMinimizedDFA: (dfa) => set({ minimizedDFA: dfa }),
+  setNFA: (nfa) => set({
+    nfa,
+    automatonType: 'NFA',
+    selectedStateId: null,
+    selectedTransitionKey: null,
+    hoveredStateId: null,
+    hoveredTransitionKey: null,
+  }),
+  setDFA: (dfa) => set({
+    dfa,
+    automatonType: 'DFA',
+    selectedStateId: null,
+    selectedTransitionKey: null,
+    hoveredStateId: null,
+    hoveredTransitionKey: null,
+  }),
+  setMinimizedDFA: (dfa) => set({
+    minimizedDFA: dfa,
+    selectedStateId: null,
+    selectedTransitionKey: null,
+    hoveredStateId: null,
+    hoveredTransitionKey: null,
+  }),
   setAutomatonType: (t) => set({ automatonType: t }),
   setInputString: (s) => set({ inputString: s }),
   setCurrentStep: (n) => set({ currentStep: n }),
@@ -148,10 +193,38 @@ export const useAutomataStore = create<AutomataStore>((set) => ({
   setTmHeadPosition: (pos) => set({ tmHeadPosition: pos }),
   addTraceEntry: (entry) => set((state) => ({ traceLog: [...state.traceLog, entry] })),
   clearTrace: () => set({ traceLog: [] }),
-  setActiveTab: (tab) => set({ activeTab: tab, simulationStatus: 'idle', currentStep: 0 }),
-  setActiveSubTab: (tab) => set({ activeSubTab: tab, simulationStatus: 'idle', currentStep: 0 }),
+  setActiveTab: (tab) => set({
+    activeTab: tab,
+    simulationStatus: 'idle',
+    currentStep: 0,
+    selectedStateId: null,
+    selectedTransitionKey: null,
+    hoveredStateId: null,
+    hoveredTransitionKey: null,
+  }),
+  setActiveSubTab: (tab) => set({
+    activeSubTab: tab,
+    simulationStatus: 'idle',
+    currentStep: 0,
+    selectedStateId: null,
+    selectedTransitionKey: null,
+    hoveredStateId: null,
+    hoveredTransitionKey: null,
+  }),
   setRightPanelOpen: (open) => set({ rightPanelOpen: open }),
   setPdaSubTab: (tab) => set({ pdaSubTab: tab }),
+  setTheme: (theme) => set({ theme }),
+  toggleTheme: () => set((state) => ({ theme: state.theme === 'dark' ? 'light' : 'dark' })),
+  setSelectedStateId: (stateId) => set({ selectedStateId: stateId }),
+  setSelectedTransitionKey: (transitionKey) => set({ selectedTransitionKey: transitionKey }),
+  setHoveredStateId: (stateId) => set({ hoveredStateId: stateId }),
+  setHoveredTransitionKey: (transitionKey) => set({ hoveredTransitionKey: transitionKey }),
+  clearInspectionFocus: () => set({
+    selectedStateId: null,
+    selectedTransitionKey: null,
+    hoveredStateId: null,
+    hoveredTransitionKey: null,
+  }),
   appendToExpression: (char) => set((state) => ({ currentExpression: state.currentExpression + char, expressionValid: null })),
   backspaceExpression: () => set((state) => ({ currentExpression: state.currentExpression.slice(0, -1), expressionValid: null })),
   clearExpression: () => set({ currentExpression: '', expressionValid: null, expressionError: null }),
@@ -164,5 +237,9 @@ export const useAutomataStore = create<AutomataStore>((set) => ({
     stepHistory: [], activeStates: [], activeTransition: null,
     simulationStatus: 'idle', traceLog: [],
     pdaStack: [], tmTape: [], tmHeadPosition: 0,
+    selectedStateId: null,
+    selectedTransitionKey: null,
+    hoveredStateId: null,
+    hoveredTransitionKey: null,
   }),
 }));

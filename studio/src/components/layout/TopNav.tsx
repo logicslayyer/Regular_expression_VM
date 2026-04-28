@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAutomataStore } from '../../store/useAutomataStore';
-import { Dna, BookOpen, Cpu, Brain, Layers, HelpCircle, Sun } from 'lucide-react';
+import { Dna, BookOpen, Cpu, Brain, Layers, HelpCircle, Moon, Sun } from 'lucide-react';
 
 const TABS = [
   { id: 'studio',     label: 'Automata Studio',  icon: Layers },
@@ -11,7 +11,8 @@ const TABS = [
 ] as const;
 
 export const TopNav: React.FC = () => {
-  const { activeTab, setActiveTab } = useAutomataStore();
+  const { activeTab, setActiveTab, theme, toggleTheme } = useAutomataStore();
+  const ThemeIcon = theme === 'light' ? Moon : Sun;
 
   return (
     <nav style={{
@@ -59,8 +60,14 @@ export const TopNav: React.FC = () => {
 
       {/* Right actions */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '16px' }}>
-        <button className="btn btn-ghost" style={{ padding: '6px 10px' }}>
-          <Sun size={14} />
+        <button
+          className="btn btn-ghost"
+          style={{ padding: '6px 10px' }}
+          onClick={toggleTheme}
+          title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+          aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+        >
+          <ThemeIcon size={14} />
         </button>
         <button className="btn btn-ghost" style={{ padding: '6px 10px' }}>
           <HelpCircle size={14} />

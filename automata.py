@@ -1,4 +1,5 @@
 from collections import deque
+import re
 
 class State:
     """Represents a state in the automaton."""
@@ -130,7 +131,7 @@ def get_alphabet(nfa):
         for s in curr.epsilon_transitions:
             if s not in visited:
                 q.append(s)
-    return list(alphabet)
+    return sorted(alphabet)
 
 class DFA:
     def __init__(self, alphabet):
@@ -143,15 +144,24 @@ class DFA:
 def nfa_to_dfa(nfa):
     alphabet = get_alphabet(nfa)
     dfa = DFA(alphabet)
+    state_index = {}
+    dead_state = frozenset()
 
     start_closure = epsilon_closure([nfa.start_state])
     dfa.states.append(start_closure)
+    state_index[start_closure] = 0
 
     unmarked = [start_closure]
 
+    def add_state(subset):
+        if subset not in state_index:
+            state_index[subset] = len(dfa.states)
+            dfa.states.append(subset)
+        return state_index[subset]
+
     while unmarked:
         current_dfa_state = unmarked.pop(0)
-        current_idx = dfa.states.index(current_dfa_state)
+        current_idx = state_index[current_dfa_state]
         dfa.transitions[current_idx] = {}
 
         if any(state.is_end for state in current_dfa_state):
@@ -160,15 +170,25 @@ def nfa_to_dfa(nfa):
         for char in alphabet:
             next_states = move(current_dfa_state, char)
             if not next_states:
+                dead_idx = add_state(dead_state)
+                dfa.transitions[current_idx][char] = dead_idx
+                if dead_state not in unmarked and dead_idx not in dfa.transitions:
+                    unmarked.append(dead_state)
                 continue
 
             next_closure = epsilon_closure(next_states)
 
-            if next_closure not in dfa.states:
-                dfa.states.append(next_closure)
+            if next_closure not in state_index:
+                add_state(next_closure)
                 unmarked.append(next_closure)
 
-            dfa.transitions[current_idx][char] = dfa.states.index(next_closure)
+            dfa.transitions[current_idx][char] = state_index[next_closure]
+
+    if dead_state in state_index:
+        dead_idx = state_index[dead_state]
+        dfa.transitions.setdefault(dead_idx, {})
+        for char in alphabet:
+            dfa.transitions[dead_idx][char] = dead_idx
 
     return dfa
 
@@ -181,17 +201,23 @@ def simulate_dfa(dfa, input_string):
     """
     trace = []
     current_state = dfa.start_state
+    dead_state = None
+    for idx, subset in enumerate(dfa.states):
+        if not subset:
+            dead_state = idx
+            break
 
     # Initial state
     trace.append(("START", "", current_state))
 
     for char in input_string:
-        if current_state not in dfa.transitions or char not in dfa.transitions[current_state]:
-            # No transition, rejected
-            trace.append((current_state, f"{char} (rejected)", None))
+        next_state = dfa.transitions.get(current_state, {}).get(char)
+        if next_state is None:
+            next_state = dead_state
+            trace.append((current_state, char, next_state))
+            current_state = next_state if next_state is not None else current_state
+            trace.append((current_state, "END", "REJECTED"))
             return False, trace
-        
-        next_state = dfa.transitions[current_state][char]
         trace.append((current_state, char, next_state))
         current_state = next_state
 
@@ -228,21 +254,32 @@ def format_nfa_transitions(nfa):
             if s not in visited:
                 q.append(s)
     
-    return sorted(list(set(lines))) # basic sorting
+    def sort_key(line):
+        source = line.split('--')[0].strip()
+        match = re.search(r'q(\d+)', source)
+        return int(match.group(1)) if match else float('inf')
+
+    return sorted(list(set(lines)), key=sort_key)
+
+def _dfa_state_label(dfa, state_idx):
+    label = f"d{state_idx}"
+    if state_idx == dfa.start_state:
+        label += " (Start)"
+    if state_idx in dfa.accept_states:
+        label += " (Accept)"
+    if not dfa.states[state_idx]:
+        label += " (Dead)"
+    return label
 
 def format_dfa_transitions(dfa):
     """Returns a list of strings representing DFA transitions for GUI display"""
     lines = []
     for state_idx, trans in dfa.transitions.items():
-        label_curr = f"d{state_idx}"
-        if state_idx == dfa.start_state:
-            label_curr += " (Start)"
-        if state_idx in dfa.accept_states:
-            label_curr += " (Accept)"
+        label_curr = _dfa_state_label(dfa, state_idx)
             
         for char, target_idx in trans.items():
-            label_tgt = f"d{target_idx}"
-            lines.append(f"{label_curr} --{char}--> d{target_idx}")
+            label_tgt = _dfa_state_label(dfa, target_idx)
+            lines.append(f"{label_curr} --{char}--> {label_tgt}")
             
     if not lines:
         lines.append("No transitions.")
@@ -299,9 +336,10 @@ def format_dfa_cyto(dfa):
         classes = "accept" if state_idx in dfa.accept_states else ""
         if state_idx == dfa.start_state:
             classes += " start"
+        label = f"d{state_idx}" if dfa.states[state_idx] else "∅"
             
         nodes.append({
-            "data": {"id": f"d{state_idx}", "label": f"d{state_idx}"},
+            "data": {"id": f"d{state_idx}", "label": label},
             "classes": classes.strip()
         })
 
