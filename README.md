@@ -1,5 +1,6 @@
 # Automata Theory Studio
 
+🚀 **Live Demo:** [https://regular-expression-vm-s6vs.vercel.app/](https://regular-expression-vm-s6vs.vercel.app/)
 ## Main UI
 The main interface is the React/Vite studio app in `studio/`.
 
