@@ -5,6 +5,7 @@ import { TuringTape } from '../special/TuringTape';
 import { examplePDA, pdaSimulate } from '../../engine/pda-simulator';
 import { exampleTM, tmSimulate } from '../../engine/turing-machine';
 import { AutomataCanvas } from '../canvas/AutomataCanvas';
+import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 
 export const PDAAndTM: React.FC = () => {
   const { pdaSubTab, setPdaSubTab, setPdaStack, setTmTape, setTmHeadPosition } = useAutomataStore();
@@ -61,9 +62,9 @@ export const PDAAndTM: React.FC = () => {
       </div>
 
       {pdaSubTab === 'pda' && (
-        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        <PanelGroup direction="horizontal" style={{ flex: 1, overflow: 'hidden' }}>
           {/* Left: PDA graph (60%) */}
-          <div style={{ flex: '0 0 60%', borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column' }}>
+          <Panel defaultSize={60} minSize={20} style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--border)', display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
               <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>PDA: a^n b^n</span>
               <input
@@ -88,10 +89,12 @@ export const PDAAndTM: React.FC = () => {
             <div style={{ flex: 1, overflow: 'hidden' }}>
               <AutomataCanvas />
             </div>
-          </div>
+          </Panel>
+
+          <PanelResizeHandle style={{ width: '4px', background: 'var(--border)', cursor: 'col-resize' }} />
 
           {/* Right: Stack (40%) */}
-          <div style={{ flex: '0 0 40%', display: 'flex', flexDirection: 'column' }}>
+          <Panel defaultSize={40} minSize={20} style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
               <span className="panel-section-title">Stack State</span>
             </div>
@@ -104,14 +107,14 @@ export const PDAAndTM: React.FC = () => {
                 </div>
               </div>
             )}
-          </div>
-        </div>
+          </Panel>
+        </PanelGroup>
       )}
 
       {pdaSubTab === 'tm' && (
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+        <PanelGroup direction="vertical" style={{ flex: 1, overflow: 'hidden' }}>
           {/* Top: TM graph (50%) */}
-          <div style={{ flex: '0 0 50%', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column' }}>
+          <Panel defaultSize={50} minSize={20} style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--border)', display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
               <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>TM: 0^n 1^n</span>
               <input
@@ -136,18 +139,20 @@ export const PDAAndTM: React.FC = () => {
             <div style={{ flex: 1, overflow: 'hidden' }}>
               <AutomataCanvas />
             </div>
-          </div>
+          </Panel>
+
+          <PanelResizeHandle style={{ height: '4px', background: 'var(--border)', cursor: 'row-resize' }} />
 
           {/* Bottom: Tape (50%) */}
-          <div style={{ flex: '0 0 50%', display: 'flex', flexDirection: 'column' }}>
+          <Panel defaultSize={50} minSize={20} style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
               <span className="panel-section-title">Turing Tape</span>
             </div>
             <div style={{ flex: 1, overflow: 'hidden' }}>
               <TuringTape />
             </div>
-          </div>
-        </div>
+          </Panel>
+        </PanelGroup>
       )}
     </div>
   );

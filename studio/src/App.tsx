@@ -9,6 +9,7 @@ import { GrammarLab } from './components/tabs/GrammarLab';
 import { PDAAndTM } from './components/tabs/PDAAndTM';
 import { ComplexityApps } from './components/tabs/ComplexityApps';
 import { LearningHub } from './components/tabs/LearningHub';
+import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 
 const TAB_COMPONENTS = {
   studio:     AutomataStudio,
@@ -34,9 +35,8 @@ function App() {
 
   return (
     <div style={{
-      display: 'grid',
-      gridTemplateRows: '56px 1fr',
-      gridTemplateColumns: '1fr',
+      display: 'flex',
+      flexDirection: 'column',
       height: '100vh',
       width: '100vw',
       overflow: 'hidden',
@@ -46,31 +46,55 @@ function App() {
       <TopNav />
 
       {/* Main area */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: `${showSidebar ? '280px' : '0'} 1fr ${showRight ? 'auto' : '0'}`,
-        gridTemplateRows: `1fr ${showBottom ? '72px' : '0'}`,
-        overflow: 'hidden',
-      }}>
-        {/* Left Sidebar */}
-        {showSidebar && <LeftSidebar />}
-        {!showSidebar && <div />}
+      <div style={{ flex: 1, overflow: 'hidden' }}>
+        <PanelGroup direction="horizontal">
+          {/* Left Sidebar */}
+          {showSidebar && (
+            <>
+              <Panel defaultSize={20} minSize={10} maxSize={40} style={{ display: 'flex' }}>
+                <div style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
+                  <LeftSidebar />
+                </div>
+              </Panel>
+              <PanelResizeHandle style={{ width: '4px', cursor: 'col-resize', background: 'var(--border)' }} />
+            </>
+          )}
 
-        {/* Central Content */}
-        <main style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', minWidth: 0, gridRow: '1', gridColumn: `${showSidebar ? '2' : '1'} / ${showRight ? '3' : '-1'}` }}>
-          <ActiveTabComponent />
-        </main>
+          {/* Central Content */}
+          <Panel minSize={30}>
+            {showBottom ? (
+              <PanelGroup direction="vertical">
+                <Panel minSize={30} style={{ display: 'flex', flexDirection: 'column' }}>
+                  <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                    <ActiveTabComponent />
+                  </main>
+                </Panel>
+                <PanelResizeHandle style={{ height: '4px', cursor: 'row-resize', background: 'var(--border)' }} />
+                <Panel defaultSize={15} minSize={5} maxSize={50} style={{ display: 'flex' }}>
+                  <div style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
+                    <BottomBar />
+                  </div>
+                </Panel>
+              </PanelGroup>
+            ) : (
+              <main style={{ height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                <ActiveTabComponent />
+              </main>
+            )}
+          </Panel>
 
-        {/* Right Panel */}
-        {showRight && <RightPanel />}
-        {!showRight && <div />}
-
-        {/* Bottom Bar spans full width under main content area */}
-        {showBottom && (
-          <div style={{ gridColumn: `${showSidebar ? '1' : '1'} / -1`, gridRow: '2' }}>
-            <BottomBar />
-          </div>
-        )}
+          {/* Right Panel */}
+          {showRight && (
+            <>
+              <PanelResizeHandle style={{ width: '4px', cursor: 'col-resize', background: 'var(--border)' }} />
+              <Panel defaultSize={25} minSize={15} maxSize={40} style={{ display: 'flex' }}>
+                <div style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
+                  <RightPanel />
+                </div>
+              </Panel>
+            </>
+          )}
+        </PanelGroup>
       </div>
     </div>
   );

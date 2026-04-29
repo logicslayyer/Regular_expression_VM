@@ -90,10 +90,6 @@ export function buildDFA(nfa: NFA): DFA {
     isAccepting: startClosure.some(s => nfa.acceptingStates.includes(s)),
   });
 
-  // Add dead state placeholder key
-  const deadKey = '{∅}';
-  let deadStateAdded = false;
-
   while (queue.length > 0) {
     const current = queue.shift()!;
     const currentKey = subsetKey(current);
@@ -102,24 +98,19 @@ export function buildDFA(nfa: NFA): DFA {
     for (const symbol of nfa.alphabet) {
       const moved = move(current, symbol, nfa.transitions);
       const closure = epsilonClosure(moved, nfa.transitions);
-
       if (closure.length === 0) {
-        // Transition to dead state — must add a non-accepting sink state
-        if (!deadStateAdded) {
+        const deadKey = '{}';
+        if (!subsetMap.has(deadKey)) {
           const deadId = newDFAState();
           subsetMap.set(deadKey, deadId);
+          queue.push([]);
           dfaStates.push({
             id: deadId,
-            label: '∅',
+            label: 'Ø',
             nfaStates: [],
             isStart: false,
             isAccepting: false,
           });
-          // Dead state loops to itself on all symbols
-          for (const sym of nfa.alphabet) {
-            dfaTransitions.push({ from: deadId, to: deadId, symbol: sym });
-          }
-          deadStateAdded = true;
         }
         dfaTransitions.push({
           from: currentId,
@@ -185,9 +176,6 @@ export function* subsetConstructionSteps(nfa: NFA): Generator<SubsetStep> {
     dfa: { states: [...yield_states], alphabet: nfa.alphabet, transitions: [...yield_transitions], startState: startId, acceptingStates: yield_states.filter(s=>s.isAccepting).map(s=>s.id) }
   };
 
-  const deadKey = '{∅}';
-  let deadStateAdded = false;
-
   while (queue.length > 0) {
     const current = queue.shift()!;
     const currentKey = subsetKey(current);
@@ -196,25 +184,24 @@ export function* subsetConstructionSteps(nfa: NFA): Generator<SubsetStep> {
     for (const symbol of nfa.alphabet) {
       const moved = move(current, symbol, nfa.transitions);
       const closure = epsilonClosure(moved, nfa.transitions);
-
       if (closure.length === 0) {
-        if (!deadStateAdded) {
+        const deadKey = '{}';
+        let isNew = false;
+        if (!subsetMap.has(deadKey)) {
           const deadId = newDFAState();
           subsetMap.set(deadKey, deadId);
+          queue.push([]);
+          isNew = true;
           yield_states.push({
-            id: deadId, label: '∅', nfaStates: [],
+            id: deadId, label: 'Ø', nfaStates: [],
             isStart: false, isAccepting: false,
           });
-          for (const sym of nfa.alphabet) {
-            yield_transitions.push({ from: deadId, to: deadId, symbol: sym });
-          }
-          deadStateAdded = true;
         }
         yield_transitions.push({ from: currentId, to: subsetMap.get(deadKey)!, symbol });
 
         yield {
           stepIndex: stepIndex++,
-          description: `δ(${currentKey}, ${symbol}) = ∅ → Dead state`,
+          description: `δ(${currentKey}, ${symbol}) = Ø${isNew ? ' [NEW DEAD STATE]' : ''}`,
           currentSubset: current,
           newSubset: [],
           symbol,

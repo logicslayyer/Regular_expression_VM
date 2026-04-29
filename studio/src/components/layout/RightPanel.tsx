@@ -48,7 +48,7 @@ export const RightPanel: React.FC = () => {
 
   return (
     <aside style={{
-      width: '300px',
+      width: '100%',
       background: 'var(--bg-surface)',
       borderLeft: '1px solid var(--border)',
       display: 'flex',

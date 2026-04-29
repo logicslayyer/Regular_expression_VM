@@ -3,7 +3,6 @@ import {
   ReactFlow, Background, Controls, MiniMap,
   addEdge, useNodesState, useEdgesState, BackgroundVariant,
   type Node, type Edge, type OnConnect,
-  Position,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useAutomataStore } from '../../store/useAutomataStore';
@@ -15,35 +14,31 @@ import { DFA } from '../../engine/subset-construction';
 const nodeTypes = { stateNode: CustomStateNode };
 const edgeTypes = { customEdge: CustomEdge };
 
-// Improved layout: force-directed-like placement
-function layoutNodes(
-  states: { id: string; isStart: boolean; isAccepting: boolean; label?: string }[],
-  transitions: { from: string; to: string; symbol: string }[]
-) {
+type CanvasNodeData = Record<string, unknown> & {
+  label: string;
+  isStart: boolean;
+  isAccepting: boolean;
+  isActive?: boolean;
+  isRejected?: boolean;
+  isNFAActive?: boolean;
+};
+
+type CanvasEdgeData = Record<string, unknown> & {
+  label: string;
+  isSelfLoop: boolean;
+  isActive?: boolean;
+};
+
+type CanvasNode = Node<CanvasNodeData, 'stateNode'>;
+type CanvasEdge = Edge<CanvasEdgeData, 'customEdge'>;
+
+// Arrange nodes in a circle so small automata stay readable.
+function layoutNodes(states: { id: string; isStart: boolean; isAccepting: boolean; label?: string }[]) {
   const n = states.length;
-  if (n === 0) return [];
+  const radius = Math.min(220, Math.max(100, n * 40));
+  const cx = 400;
+  const cy = 300;
 
-  if (n <= 8) {
-    // Use circle layout for cleaner rendering with all edge directions
-    const radius = Math.max(120, n * 50);
-    const cx = 400, cy = 300;
-    return states.map((s, i) => {
-      const angle = (2 * Math.PI * i) / n - Math.PI / 2;
-      return {
-        id: s.id,
-        type: 'stateNode',
-        position: {
-          x: cx + radius * Math.cos(angle),
-          y: cy + radius * Math.sin(angle),
-        },
-        data: { label: s.label || s.id, isStart: s.isStart, isAccepting: s.isAccepting },
-      };
-    });
-  }
-
-  // Larger graphs: circle
-  const radius = Math.min(300, Math.max(150, n * 42));
-  const cx = 400, cy = 320;
   return states.map((s, i) => {
     const angle = (2 * Math.PI * i) / n - Math.PI / 2;
     return {
@@ -51,72 +46,51 @@ function layoutNodes(
       type: 'stateNode',
       position: { x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) },
       data: { label: s.label || s.id, isStart: s.isStart, isAccepting: s.isAccepting },
-    };
+    } as CanvasNode;
   });
 }
 
-// Group parallel edges by same from→to pair and combine labels
+// Group parallel edges by same from/to pair and combine labels.
 function buildEdges(transitions: { from: string; to: string; symbol: string }[]) {
   const grouped = new Map<string, string[]>();
   for (const t of transitions) {
-    const key = `${t.from}→${t.to}`;
+    const key = `${t.from}__${t.to}`;
     if (!grouped.has(key)) grouped.set(key, []);
     grouped.get(key)!.push(t.symbol);
   }
 
-  // Track bidirectional pairs
-  const biDirectional = new Set<string>();
-  for (const key of grouped.keys()) {
-    const [from, to] = key.split('→');
-    const reverseKey = `${to}→${from}`;
-    if (from !== to && grouped.has(reverseKey)) {
-      biDirectional.add(key);
-    }
-  }
-
-  const edges: Edge[] = [];
+  const edges: CanvasEdge[] = [];
   for (const [key, symbols] of grouped.entries()) {
-    const [from, to] = key.split('→');
-    const isSelf = from === to;
-    const isBiDir = biDirectional.has(key);
-
+    const [from, to] = key.split('__');
     edges.push({
-      id: `edge-${from}-${to}`,
+      id: `${from}-${to}`,
       source: from,
       target: to,
+      sourceHandle: from === to ? 'top-source' : undefined,
+      targetHandle: from === to ? 'top-target' : undefined,
       type: 'customEdge',
       label: symbols.join(', '),
-      data: {
-        label: symbols.join(', '),
-        isSelfLoop: isSelf,
-        isBiDirectional: isBiDir,
-      },
-      // For bidirectional edges, use different source/target handles
-      ...(isBiDir ? {
-        sourceHandle: 'source-top',
-        targetHandle: 'target-top',
-      } : {}),
-    });
+      data: { label: symbols.join(', '), isSelfLoop: from === to },
+    } as CanvasEdge);
   }
   return edges;
 }
 
 export const AutomataCanvas: React.FC = () => {
   const { nfa, dfa, minimizedDFA, activeSubTab, activeStates, activeTransition } = useAutomataStore();
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<CanvasNode>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<CanvasEdge>([]);
 
   const onConnect: OnConnect = useCallback(
     (connection) => setEdges((eds) => addEdge(connection, eds)),
     [setEdges]
   );
 
-  // Build graph whenever automaton changes
+  // Build graph whenever the automaton changes.
   useEffect(() => {
     let automaton: NFA | DFA | null = null;
     if (activeSubTab === 're-nfa') automaton = nfa;
-    else if (activeSubTab === 'dfa-min') automaton = minimizedDFA || dfa || nfa;
-    else automaton = dfa || nfa;
+    else automaton = minimizedDFA || dfa || nfa;
 
     if (!automaton) {
       setNodes([]);
@@ -124,38 +98,39 @@ export const AutomataCanvas: React.FC = () => {
       return;
     }
 
-    const newNodes = layoutNodes(
-      automaton.states.map(s => ({
-        id: s.id,
-        isStart: s.isStart,
-        isAccepting: s.isAccepting,
-        label: s.id,
-      })),
-      automaton.transitions
-    );
+    const newNodes = layoutNodes(automaton.states.map((s) => ({
+      id: s.id,
+      isStart: s.isStart,
+      isAccepting: s.isAccepting,
+      label: s.id,
+    })));
     const newEdges = buildEdges(automaton.transitions);
-    setNodes(newNodes as any);
-    setEdges(newEdges as any);
-  }, [nfa, dfa, minimizedDFA, activeSubTab]);
+    setNodes(newNodes);
+    setEdges(newEdges);
+  }, [nfa, dfa, minimizedDFA, activeSubTab, setNodes, setEdges]);
 
-  // Update active state highlights
+  // Update active state highlights.
   useEffect(() => {
-    setNodes(nds => nds.map(n => ({
+    setNodes((nds) => nds.map((n) => ({
       ...n,
       data: {
         ...n.data,
         isActive: activeStates.includes(n.id),
       },
     })));
-  }, [activeStates]);
+  }, [activeStates, setNodes]);
 
-  // Update active edge highlight
+  // Update active edge highlight.
   useEffect(() => {
-    setEdges(eds => eds.map(e => ({
+    setEdges((eds) => eds.map((e) => ({
       ...e,
-      data: { ...e.data, isActive: e.id === activeTransition },
+      data: {
+        label: e.data?.label ?? '',
+        isSelfLoop: e.data?.isSelfLoop ?? false,
+        isActive: e.id === activeTransition,
+      },
     })));
-  }, [activeTransition]);
+  }, [activeTransition, setEdges]);
 
   const hasAutomaton = !!(nfa || dfa);
 
@@ -176,7 +151,8 @@ export const AutomataCanvas: React.FC = () => {
               Ready to Build
             </div>
             <div style={{ color: 'var(--text-muted)', fontSize: '14px', maxWidth: '280px' }}>
-              Type a regular expression using the calculator on the left, then click <span style={{ color: 'var(--accent-cyan)' }}>Generate NFA</span>
+              Type a regular expression using the calculator on the left, then click
+              <span style={{ color: 'var(--accent-cyan)' }}> Generate NFA</span>
             </div>
           </div>
         </div>
@@ -190,14 +166,14 @@ export const AutomataCanvas: React.FC = () => {
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         fitView
-        fitViewOptions={{ padding: 0.4 }}
+        fitViewOptions={{ padding: 0.3 }}
         proOptions={{ hideAttribution: true }}
         style={{ background: 'var(--bg-base)' }}
       >
         <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="rgba(255,255,255,0.04)" />
         <Controls style={{ border: '1px solid var(--border)' }} />
         <MiniMap
-          nodeColor={n => (n.data as any)?.isActive ? '#22d3a5' : '#1a1e2a'}
+          nodeColor={(n) => (n.data.isActive ? '#22d3a5' : '#1a1e2a')}
           maskColor="rgba(13,15,20,0.8)"
         />
       </ReactFlow>

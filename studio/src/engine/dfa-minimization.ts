@@ -113,6 +113,7 @@ export function minimizeDFA(dfa: DFA): { minimizedDFA: DFA; steps: MinimizationS
   const groupIdMap = new Map<string, string>();
 
   for (const [rep, group] of groupMap.entries()) {
+    const repState = states.find(s => s.id === rep)!;
     const minId = `q${minStateIdx++}`;
     groupIdMap.set(rep, minId);
     minStates.push({
