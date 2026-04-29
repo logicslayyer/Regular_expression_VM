@@ -70,8 +70,8 @@ export function* pdaSimulate(pda: PDA, input: string): Generator<PDAStep> {
     );
 
     if (!transition) {
-      const accepted = pda.acceptingStates.includes(state) ||
-        (remaining.length === 0 && stack.length === 0);
+      const accepted = remaining.length === 0 &&
+        (pda.acceptingStates.includes(state) || stack.length === 0);
       yield {
         stepIndex: stepIdx++,
         description: accepted ? '✅ Accepted! (no more transitions, in accepting state)' : '❌ Rejected — no valid transition',
@@ -101,19 +101,7 @@ export function* pdaSimulate(pda: PDA, input: string): Generator<PDAStep> {
       activeTransition: transition,
     };
 
-    if (remaining.length === 0) {
-      const accepted = pda.acceptingStates.includes(state) || stack.length === 0;
-      yield {
-        stepIndex: stepIdx++,
-        description: accepted ? '✅ String accepted!' : '❌ String rejected — input consumed but not in accepting config',
-        currentState: state,
-        stack: [...stack],
-        remainingInput: [],
-        accepted,
-        rejected: !accepted,
-      };
-      return;
-    }
+
   }
 
   yield {
