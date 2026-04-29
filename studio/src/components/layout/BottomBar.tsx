@@ -97,7 +97,7 @@ export const BottomBar: React.FC = () => {
 
   return (
     <div style={{
-      height: '72px',
+      height: '100%',
       background: 'var(--bg-surface)',
       borderTop: '1px solid var(--border)',
       display: 'flex',

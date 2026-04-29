@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useAutomataStore } from '../../store/useAutomataStore';
 import { StackVisualizer } from '../special/StackVisualizer';
 import { TuringTape } from '../special/TuringTape';
@@ -43,6 +43,48 @@ export const PDAAndTM: React.FC = () => {
 
   const pdaStep = pdaSteps[currentPdaStep];
   const tmStep = tmSteps[currentTmStep];
+
+  const [pdaSplit, setPdaSplit] = useState(60);
+  const pdaContainerRef = useRef<HTMLDivElement>(null);
+
+  const handlePdaDrag = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const container = pdaContainerRef.current;
+    if (!container) return;
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const rect = container.getBoundingClientRect();
+      const newWidth = ((moveEvent.clientX - rect.left) / rect.width) * 100;
+      setPdaSplit(Math.min(Math.max(newWidth, 20), 80));
+    };
+    const onMouseUp = () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  };
+
+  const [tmSplit, setTmSplit] = useState(50);
+  const tmContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleTmDrag = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const container = tmContainerRef.current;
+    if (!container) return;
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const rect = container.getBoundingClientRect();
+      const newHeight = ((moveEvent.clientY - rect.top) / rect.height) * 100;
+      setTmSplit(Math.min(Math.max(newHeight, 20), 80));
+    };
+    const onMouseUp = () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  };
 
   const handlePdaForward = () => {
     const next = Math.min(currentPdaStep + 1, pdaSteps.length - 1);
@@ -100,35 +142,11 @@ export const PDAAndTM: React.FC = () => {
       </div>
 
       {pdaSubTab === 'pda' && (
-        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-          {/* Left: PDA graph (60%) */}
-          <div
-            style={{
-              flex: '0 0 60%',
-              borderRight: '1px solid var(--border)',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            <div
-              style={{
-                padding: '10px 12px',
-                borderBottom: '1px solid var(--border)',
-                display: 'flex',
-                gap: '8px',
-                alignItems: 'center',
-                flexShrink: 0,
-              }}
-            >
-              <span
-                style={{
-                  fontSize: '12px',
-                  color: 'var(--text-muted)',
-                  fontWeight: 600,
-                }}
-              >
-                PDA: a^n b^n
-              </span>
+        <div ref={pdaContainerRef} style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+          {/* Left: PDA graph */}
+          <div style={{ flex: `0 0 ${pdaSplit}%`, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--border)', display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>PDA: a^n b^n</span>
               <input
                 value={pdaInput}
                 onChange={(e) => setPdaInput(e.target.value)}
@@ -211,21 +229,23 @@ export const PDAAndTM: React.FC = () => {
             </div>
           </div>
 
-          {/* Right: Stack (40%) */}
           <div
+            onMouseDown={handlePdaDrag}
             style={{
-              flex: '0 0 40%',
-              display: 'flex',
-              flexDirection: 'column',
+              width: '6px',
+              cursor: 'col-resize',
+              background: 'var(--border)',
+              flexShrink: 0,
+              zIndex: 10,
+              transition: 'background 0.2s',
             }}
-          >
-            <div
-              style={{
-                padding: '10px 12px',
-                borderBottom: '1px solid var(--border)',
-                flexShrink: 0,
-              }}
-            >
+            onMouseOver={(e) => (e.currentTarget.style.background = 'var(--accent-cyan)')}
+            onMouseOut={(e) => (e.currentTarget.style.background = 'var(--border)')}
+          />
+
+          {/* Right: Stack */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
               <span className="panel-section-title">Stack State</span>
             </div>
             <StackVisualizer />
@@ -262,42 +282,11 @@ export const PDAAndTM: React.FC = () => {
       )}
 
       {pdaSubTab === 'tm' && (
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            flex: 1,
-            overflow: 'hidden',
-          }}
-        >
-          {/* Top: TM graph (50%) */}
-          <div
-            style={{
-              flex: '0 0 50%',
-              borderBottom: '1px solid var(--border)',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            <div
-              style={{
-                padding: '10px 12px',
-                borderBottom: '1px solid var(--border)',
-                display: 'flex',
-                gap: '8px',
-                alignItems: 'center',
-                flexShrink: 0,
-              }}
-            >
-              <span
-                style={{
-                  fontSize: '12px',
-                  color: 'var(--text-muted)',
-                  fontWeight: 600,
-                }}
-              >
-                TM: 0^n 1^n
-              </span>
+        <div ref={tmContainerRef} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+          {/* Top: TM graph */}
+          <div style={{ flex: `0 0 ${tmSplit}%`, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--border)', display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>TM: 0^n 1^n</span>
               <input
                 value={tmInput}
                 onChange={(e) => setTmInput(e.target.value)}
@@ -378,21 +367,23 @@ export const PDAAndTM: React.FC = () => {
             </div>
           </div>
 
-          {/* Bottom: Tape (50%) */}
           <div
+            onMouseDown={handleTmDrag}
             style={{
-              flex: '0 0 50%',
-              display: 'flex',
-              flexDirection: 'column',
+              height: '6px',
+              cursor: 'row-resize',
+              background: 'var(--border)',
+              flexShrink: 0,
+              zIndex: 10,
+              transition: 'background 0.2s',
             }}
-          >
-            <div
-              style={{
-                padding: '10px 12px',
-                borderBottom: '1px solid var(--border)',
-                flexShrink: 0,
-              }}
-            >
+            onMouseOver={(e) => (e.currentTarget.style.background = 'var(--accent-cyan)')}
+            onMouseOut={(e) => (e.currentTarget.style.background = 'var(--border)')}
+          />
+
+          {/* Bottom: Tape */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
               <span className="panel-section-title">Turing Tape</span>
             </div>
             <div style={{ flex: 1, overflow: 'hidden' }}>

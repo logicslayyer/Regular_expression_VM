@@ -38,7 +38,8 @@ export const LeftSidebar: React.FC = () => {
 
   return (
     <aside style={{
-      width: '280px',
+      width: '100%',
+      height: '100%',
       background: 'var(--bg-surface)',
       borderRight: '1px solid var(--border)',
       display: 'flex',
